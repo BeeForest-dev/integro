@@ -31,20 +31,18 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C07
 Name:        infra.docker
-State:       CHANGES_REQUESTED
+State:       ACCEPTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    implementer
+Awaiting:    owner
 Contract:    see docs/CONTRACTS.md, section C07
 Delivery:    docs/reviews/C07.md
-Note:        G3/G4 pass, G1/G2 fail. Required: (1) English only - translate the
-             3 comments in compose.yaml and rewrite the C07 delivery note in
-             English; (2) drop the hardcoded `redis://localhost:6379/0` fallback
-             in workers/celery_app.py and fail fast on missing REDIS_URL;
-             (3) add a test asserting "app.workers.tasks" is in
-             app.conf.include. Details in docs/reviews/C07.md.
-             Do not start C08. C06 code stays untouched.
+Note:        G1-G4 pass after the fix round. Verified: 39 passed, ruff/mypy
+             clean, fail-fast on missing REDIS_URL, mutation check on the
+             include= registry guard, compose build/up 7/7 healthy, e2e
+             ping -> pong, healthcheck negatives exit 1, down -v clean.
+             Owner sign-off pending. Do not start C08.
 ```
 
 ## Log (append only, newest last)
@@ -83,4 +81,5 @@ Note:        G3/G4 pass, G1/G2 fail. Required: (1) English only - translate the
 | 2026-10-31 21:00 | owner | approved C01-C06; tracker set to ACCEPTED with owner sign-off. C07 continues. |
 | 2026-10-31 21:40 | reviewer | C07 CHANGES_REQUESTED — build 0, up 21.3 s, 7/7 healthy, e2e ping -> pong, healthcheck negatives exit 1, down -v clean; G3/G4 pass. G1: Russian in compose.yaml and in the delivery note, hardcoded localhost fallback. G2: the `include=` registry line has no CI guard. See docs/reviews/C07.md. |
 | 2026-10-31 22:10 | owner | remove the planning transcript and every old-project trace from the repository; keep a copy outside git. |
-```
+| 2026-10-31 22:40 | implementer | C07 fixes applied: English-only compose comments + full English review note; REDIS_URL via os.environ[] (no localhost fallback, loud startup failure); CI guard test for include=["app.workers.tasks"]; dropped worker->api / beat->worker edges; mock-crm image non-root; build/env x-anchors — clean venv: 39 passed, ruff/mypy clean; compose build/up --wait 60 -> 7/7 healthy, e2e ping -> pong, down -v clean. Awaiting reviewer. |
+| 2026-10-31 23:15 | reviewer | C07 ACCEPTED - 39 passed, ruff/mypy clean (+ --warn-unused-ignores); missing REDIS_URL -> KeyError exit 1; mutation (remove include=) fails the registry guard, restore hash-identical; compose build 0, up 21.2 s -> 7/7 healthy; /health 200, /ready 200 {"db":true,"redis":true}, /metrics 200; e2e pong; uid 1000; worker healthcheck negative exit 1; down -v clean. Awaiting owner sign-off. C08 not started. |

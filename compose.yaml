@@ -1,0 +1,114 @@
+name: integro
+
+x-backend-build: &backend-build
+  context: .
+  dockerfile: infra/Dockerfile
+
+x-backend-env: &backend-env
+  DATABASE_URL: postgresql+asyncpg://integro:integro@postgres:5432/integro
+  REDIS_URL: redis://redis:6379/0
+  # Demo placeholder, not a secret: the stack must start without .env or external keys.
+  SECRET_KEY: ${SECRET_KEY:-local-demo-only}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: integro
+      POSTGRES_PASSWORD: integro
+      POSTGRES_DB: integro
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "integro", "-d", "integro"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:v1.33.0
+    ports:
+      - "8025:8025"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8025/livez"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    image: integro-backend
+    build: *backend-build
+    command: sh -c "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    environment: *backend-env
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/ready', timeout=5)\""
+      interval: 10s
+      timeout: 6s
+      retries: 12
+      start_period: 20s
+
+  worker:
+    image: integro-backend
+    build: *backend-build
+    command: celery -A app.workers.celery_app:app worker --loglevel=INFO --concurrency=2
+    environment: *backend-env
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "celery -A app.workers.celery_app:app inspect ping --timeout 5 | grep -q pong"
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 20s
+
+  beat:
+    image: integro-backend
+    build: *backend-build
+    command: celery -A app.workers.celery_app:app beat --loglevel=INFO --pidfile=/tmp/celerybeat.pid -s /tmp/celerybeat-schedule
+    environment: *backend-env
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/celerybeat.pid && kill -0 $(cat /tmp/celerybeat.pid)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  mock-crm:
+    build:
+      context: infra/mock-crm
+    ports:
+      - "8081:8000"
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)\""
+      interval: 10s
+      timeout: 6s
+      retries: 12
+      start_period: 10s
+
+volumes:
+  pgdata:
