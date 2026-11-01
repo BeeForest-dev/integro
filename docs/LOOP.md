@@ -31,13 +31,15 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C04
 Name:        db.engine
-State:       CONTRACTED
+State:       CHANGES_REQUESTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
 Awaiting:    implementer
 Contract:    see docs/CONTRACTS.md, section C04
 Delivery:    docs/reviews/C04.md
+Note:        fix C04 first, then C05 (also CHANGES_REQUESTED, docs/reviews/C05.md).
+             Both need the dependency manifest; see the verdicts for exact items.
 ```
 
 ## Log (append only, newest last)
@@ -52,4 +54,9 @@ Delivery:    docs/reviews/C04.md
 | 2026-10-22 12:45 | implementer | C03 GENERATED (core.errors + tests) — awaiting reviewer |
 | 2026-10-22 12:55 | reviewer | C03 ACCEPTED (G1–G4 pass, 17/17 tests green) |
 | 2026-10-22 12:56 | owner | Move to C04 db.engine — CONTRACTED, awaiting implementer |
+| 2026-10-22 13:40 | implementer | C04 GENERATED (db.engine + 6 tests) — awaiting reviewer |
+| 2026-10-22 13:55 | owner | instruction "дальше" — start C05 while C04 review still pending |
+| 2026-10-22 14:20 | implementer | C05 GENERATED (db.base + alembic wiring + 6 tests) — awaiting reviewer |
+| 2026-10-26 14:05 | reviewer | C04 CHANGES_REQUESTED — code passes G1/G3/G4, but suite cannot collect in a clean checkout (no manifest) and ruff fails; see docs/reviews/C04.md |
+| 2026-10-26 14:05 | reviewer | C05 CHANGES_REQUESTED — `alembic upgrade head` on real PostgreSQL fails (psycopg undeclared), conflict test targets the wrong case, ruff fails; see docs/reviews/C05.md |
 ```
