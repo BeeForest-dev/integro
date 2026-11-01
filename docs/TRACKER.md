@@ -11,12 +11,12 @@ Update this file **daily** (5 minutes) — it is the only progress source that c
 
 | ID | Contract | Status | G1 | G2 | G3 | G4 | Notes / why it was rejected |
 |---|---|---|---|---|---|---|---|
-| C01 | core.config | TODO | | | | | |
-| C02 | core.logging | TODO | | | | | |
-| C03 | core.errors | TODO | | | | | |
-| C04 | db.engine | G4 | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C04.md); owner sign-off pending. Clean venv: 28 passed, ruff/mypy clean; 503 proven via httpx.ASGITransport. |
-| C05 | db.base + migrations | G4 | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C05.md); owner sign-off pending. Real PG16: upgrade head -> 0001_baseline (head); duplicate-revision-id conflict test added; ruff/mypy clean. |
-| C06 | api.health | G4 | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C06.md); owner sign-off pending. 37 passed; live stand: /ready 200, redis down -> 503 failed=["redis"], both down -> failed=["db","redis"], /health stays 200. Mutation check proves the Redis test guards the real PING path. |
+| C01 | core.config | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C01.md); owner sign-off 2026-10-31. 7 tests. |
+| C02 | core.logging | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C02.md); owner sign-off 2026-10-31. 4 tests. |
+| C03 | core.errors | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C03.md); owner sign-off 2026-10-31. 6 tests. |
+| C04 | db.engine | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C04.md); owner sign-off 2026-10-31. Clean venv: 28 passed, ruff/mypy clean; 503 proven via httpx.ASGITransport. |
+| C05 | db.base + migrations | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C05.md); owner sign-off 2026-10-31. Real PG16: upgrade head -> 0001_baseline (head); duplicate-revision-id conflict test added; ruff/mypy clean. |
+| C06 | api.health | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C06.md); owner sign-off 2026-10-31. 37 passed; live stand: /ready 200, redis down -> 503 failed=["redis"], both down -> failed=["db","redis"], /health stays 200. Mutation check proves the Redis test guards the real PING path. |
 | C07 | infra.docker | TODO | | | | | |
 | C08 | ci.github-actions | TODO | | | | | |
 | C09 | api.request_context | TODO | | | | | |
@@ -150,7 +150,7 @@ Update this file **daily** (5 minutes) — it is the only progress source that c
 
 | Week | Modules accepted | Rejected at gates | Clarifications needed | Demo video | Outreach sent | Notes |
 |---|---|---|---|---|---|---|
-| 1 | | | | | | |
+| 1 | C01–C06 | C04, C05, C06 (one round each, fixed and re-reviewed) | — | — | — | foundation contracts done; C07 infra.docker in progress |
 | 2 | | | | | | |
 | 3 | | | | | | |
 | 4 | | | | | | |
