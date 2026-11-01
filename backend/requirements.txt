@@ -2,14 +2,17 @@
 # backend/.venv (python -m pip freeze); httpx pinned to the newest release
 # verified with httpx.ASGITransport (not present in the working venv).
 fastapi==0.160.0
+uvicorn[standard]==0.54.0
 pydantic==2.14.1
 pydantic-settings==2.16.1
 sqlalchemy[asyncio]==2.1.6
 alembic==1.20.1
 asyncpg==0.32.0
 psycopg[binary]==3.3.6
+redis==8.1.0
 httpx==0.28.1
 structlog==26.1.0
+prometheus-client==0.26.0
 pytest==9.1.1
 ruff==0.17.1
 mypy==2.4.0

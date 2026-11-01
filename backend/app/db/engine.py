@@ -74,6 +74,22 @@ async def dispose_engine() -> None:
     _session_factory = None
 
 
+async def check_database() -> None:
+    """Probe PostgreSQL with ``SELECT 1`` through a short-lived session.
+
+    Raises:
+        RuntimeError: If ``init_engine()`` was not called first.
+        DatabaseUnavailableError: If PostgreSQL is unreachable.
+    """
+    if _session_factory is None:
+        raise RuntimeError("engine not initialised — call init_engine() first")
+    async with _session_factory() as session:
+        try:
+            await session.execute(text("SELECT 1"))
+        except Exception as exc:  # contract: 503, never 500
+            raise DatabaseUnavailableError("database is unreachable") from exc
+
+
 async def get_session() -> AsyncIterator[AsyncSession]:
     """FastAPI dependency yielding an ``AsyncSession``.
 

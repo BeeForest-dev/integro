@@ -16,7 +16,7 @@ Update this file **daily** (5 minutes) — it is the only progress source that c
 | C03 | core.errors | TODO | | | | | |
 | C04 | db.engine | G4 | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C04.md); owner sign-off pending. Clean venv: 28 passed, ruff/mypy clean; 503 proven via httpx.ASGITransport. |
 | C05 | db.base + migrations | G4 | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C05.md); owner sign-off pending. Real PG16: upgrade head -> 0001_baseline (head); duplicate-revision-id conflict test added; ruff/mypy clean. |
-| C06 | api.health | TODO | | | | | |
+| C06 | api.health | CHANGES_REQUESTED | ✓ | ✗ | ✓ | ✓ | G2: `check_redis`/`init_redis` never executed by tests (only `dispose_redis`), so the Redis path is untested in CI. Add real-path test (127.0.0.1:1 -> 503 failed=["redis"]). Everything else verified on a live stand. See docs/reviews/C06.md |
 | C07 | infra.docker | TODO | | | | | |
 | C08 | ci.github-actions | TODO | | | | | |
 | C09 | api.request_context | TODO | | | | | |

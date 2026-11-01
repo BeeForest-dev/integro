@@ -31,17 +31,17 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C06
 Name:        api.health
-State:       CONTRACTED
+State:       CHANGES_REQUESTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
 Awaiting:    implementer
 Contract:    see docs/CONTRACTS.md, section C06
-Delivery:    docs/reviews/C06.md (create it; template in this file)
-Note:        Scope includes app/main.py (create_app + lifespan). Deps: fastapi,
-             prometheus_client (newly allow-listed), redis. Do not start C07.
-             New tooling is in place: backend/pyproject.toml pins ruff; the
-             Alembic template now produces ruff-clean migrations.
+Delivery:    docs/reviews/C06.md
+Note:        one required change: add the real Redis path test (init_redis to
+             127.0.0.1:1 -> /ready 503 failed=["redis"]); check_redis is
+             currently never executed by the suite. Everything else passes
+             G1/G3/G4. See docs/reviews/C06.md. Do not start C07.
 ```
 
 ## Log (append only, newest last)
@@ -69,4 +69,6 @@ Note:        Scope includes app/main.py (create_app + lifespan). Deps: fastapi,
 | 2026-10-31 17:05 | owner | decisions: prometheus-client allowed; Python 3.13; ruff config pinned + Alembic template fixed. |
 | 2026-10-31 17:10 | reviewer | chore: `backend/pyproject.toml` (ruff, py313, isort known-third-party=alembic, F401 ignore for generated revisions), `script.py.mako` import order + blank-line fix, E501 wraps, `AGENTS.md` (3.13, prometheus-client), ADR 0001, `.python-version`. Clean venv: 28 passed, ruff/mypy clean; generated migrations (empty and with ops) pass ruff; PG16 upgrade/downgrade/re-upgrade exit 0. |
 | 2026-10-31 17:10 | reviewer | C06 api.health CONTRACTED — awaiting implementer. |
+| 2026-10-31 18:30 | implementer | C06 GENERATED (api/health + db/redis + main.py lifespan + 8 tests; requirements +uvicorn[standard]==0.54.0, redis==8.1.0, prometheus-client==0.26.0) — clean venv: 36 passed, ruff/mypy clean; live pg16+redis7: /ready 200, redis stopped -> 503 failed=["redis"]. Awaiting reviewer. |
+| 2026-10-31 19:10 | reviewer | C06 CHANGES_REQUESTED — G1/G3/G4 pass; clean venv 36 passed, live stand verified (redis down -> 503, both down -> failed=["db","redis"], /health stays 200, no DSN in logs). G2 fails: check_redis/init_redis are never executed by tests. One test required; see docs/reviews/C06.md. |
 ```
