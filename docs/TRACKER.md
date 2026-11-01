@@ -1,4 +1,4 @@
-# Tracker — `integro` (folder: `spidoznye_kozyvki2`)
+# Tracker — `integro`
 
 Status flow: `TODO` -> `CONTRACTED` -> `GENERATED` -> `G1` -> `G2` -> `G3` -> `G4` -> `ACCEPTED`
 

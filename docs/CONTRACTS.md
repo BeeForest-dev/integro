@@ -1,4 +1,4 @@
-# Contract registry — `integro` (folder: `spidoznye_kozyvki2`)
+# Contract registry — `integro`
 
 Every module is implemented from a contract. A contract is written **by the owner** in 3 lines
 and must be restatable out loud before generation starts.

@@ -82,4 +82,5 @@ Note:        G3/G4 pass, G1/G2 fail. Required: (1) English only - translate the
 | 2026-10-31 20:35 | reviewer | C07 CONTRACTED — decisions: real Celery app + ping task (celery already allow-listed), worker healthcheck via `inspect ping`, beat via pidfile, minimal FastAPI mock-crm, root compose.yaml + infra/Dockerfile on python:3.13-slim. Awaiting implementer. |
 | 2026-10-31 21:00 | owner | approved C01-C06; tracker set to ACCEPTED with owner sign-off. C07 continues. |
 | 2026-10-31 21:40 | reviewer | C07 CHANGES_REQUESTED — build 0, up 21.3 s, 7/7 healthy, e2e ping -> pong, healthcheck negatives exit 1, down -v clean; G3/G4 pass. G1: Russian in compose.yaml and in the delivery note, hardcoded localhost fallback. G2: the `include=` registry line has no CI guard. See docs/reviews/C07.md. |
+| 2026-10-31 22:10 | owner | remove the planning transcript and every old-project trace from the repository; keep a copy outside git. |
 ```

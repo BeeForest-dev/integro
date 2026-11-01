@@ -1,4 +1,4 @@
-# AGENTS.md — Rules for AI coding agents working on `spidoznye_kozyvki2`
+# AGENTS.md — Rules for AI coding agents working on `integro`
 
 This file is the contract between the human owner and any AI agent (Kimi, Cursor, Claude Code, Codex, etc.)
 that writes code in this repository.
@@ -7,11 +7,10 @@ that writes code in this repository.
 
 | Thing | Name | Why |
 |---|---|---|
-| Local folder | `C:\Projects\spidoznye_kozyvki2` | working name of the owner, not shown to clients |
 | GitHub repository | `integro` | English name is what international clients see on a portfolio |
 | Product name in the UI / README | `Integro` | brand; the README title sells the project, not the folder name |
 
-Never put the local folder name into user-facing text (README, UI, commit messages).
+Never put the local checkout path into user-facing text (README, UI, commit messages).
 
 The owner is the only person allowed to change architecture. Your job: implement a **contract**,
 exactly as written, with tests, and stop when the contract is satisfied.
@@ -123,7 +122,7 @@ Explain the module in exactly 5 bullet points at the end of your answer (see DoD
 ## 6. Project structure (do not restructure)
 
 ```
-spidoznye_kozyvki2/          # repo root (GitHub name: integro)
+integro/          # repo root
   backend/
     app/
       api/            # routers, dependencies, error handlers

@@ -1,14 +1,13 @@
 # HANDOFF — brief for Kimi (or any coding agent)
 
 Paste the relevant section into the agent's chat, or point it at the files if it has
-local filesystem access. This brief is self-contained; `docs/CONVERSATION.md` is optional
-background context.
+local filesystem access. This brief is self-contained.
 
 ---
 
 ## 1. What we are building
 
-`integro` (local folder `spidoznye_kozyvki2`) — a **workflow-automation platform**: a company
+`integro` — a **workflow-automation platform**: a company
 connects triggers (webhook, Telegram bot, IMAP mailbox, cron) to actions (REST API, CRM,
 table write, notification via Slack / Telegram / Email / Webhook) through configurable
 flows. The engine runs flows in a queue with retries, idempotency, dead-letter handling
@@ -18,7 +17,7 @@ It is a **demo environment / reference implementation** for a freelance portfoli
 base for real client work. Product quality matters: it must look like something a business
 could pay for.
 
-Stack (fixed, do not change): Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2 (async),
+Stack (fixed, do not change): Python 3.13, FastAPI, Pydantic v2, SQLAlchemy 2 (async),
 Alembic, PostgreSQL 16, Celery + Redis, httpx, tenacity, structlog, cryptography.
 Frontend: React 19 + TS + Vite + TanStack Query + Tailwind.
 
@@ -34,7 +33,6 @@ Frontend: React 19 + TS + Vite + TanStack Query + Tailwind.
 | `docs/EXECUTION-PLAN.md` | How work flows, review gates, cadence. |
 | `docs/TRACKER.md` | What is done and what is next. |
 | `docs/reviews/` | One delivery note + one review verdict per module. |
-| `docs/CONVERSATION.md` | The planning dialogue (background only). |
 
 ---
 
@@ -130,6 +128,6 @@ Do **not** start the next module until the current one has passed the owner's 4 
 
 ## 7. Environment note
 
-The project root is `C:\Projects\spidoznye_kozyvki2` (repo name on GitHub: `integro`).
-Docker and Git are not installed yet on this machine — the owner installs them in
-parallel. Python 3.13 is present locally; the project pins **3.12** in Docker.
+The project root is the local checkout of the repository (repo name on GitHub: `integro`).
+Docker and Git are installed on this machine. Python 3.13 is present locally; the project
+pins **3.13** in Docker (`python:3.13-slim`).

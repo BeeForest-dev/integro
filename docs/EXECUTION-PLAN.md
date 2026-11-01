@@ -1,4 +1,4 @@
-# Execution plan — `integro` (folder: `spidoznye_kozyvki2`)
+# Execution plan — `integro`
 
 Lead-routing & workflow-automation platform. Demo environment + foundation for real client work.
 
