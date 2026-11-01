@@ -29,17 +29,17 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ## Current contract
 
 ```
-ID:          C04
-Name:        db.engine
-State:       CHANGES_REQUESTED
+ID:          C05
+Name:        db.base + db.migrations
+State:       ACCEPTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    implementer
-Contract:    see docs/CONTRACTS.md, section C04
-Delivery:    docs/reviews/C04.md
-Note:        fix C04 first, then C05 (also CHANGES_REQUESTED, docs/reviews/C05.md).
-             Both need the dependency manifest; see the verdicts for exact items.
+Awaiting:    owner
+Contract:    see docs/CONTRACTS.md, section C05
+Delivery:    docs/reviews/C05.md
+Note:        C04 db.engine is also ACCEPTED (docs/reviews/C04.md).
+             Owner decides whether to start C06 api.health; do not start it unprompted.
 ```
 
 ## Log (append only, newest last)
@@ -60,4 +60,8 @@ Note:        fix C04 first, then C05 (also CHANGES_REQUESTED, docs/reviews/C05.m
 | 2026-10-26 14:05 | reviewer | C04 CHANGES_REQUESTED — code passes G1/G3/G4, but suite cannot collect in a clean checkout (no manifest) and ruff fails; see docs/reviews/C04.md |
 | 2026-10-26 14:05 | reviewer | C05 CHANGES_REQUESTED — `alembic upgrade head` on real PostgreSQL fails (psycopg undeclared), conflict test targets the wrong case, ruff fails; see docs/reviews/C05.md |
 | 2026-10-31 12:00 | reviewer | Re-checked C04/C05: no changes (HEAD 1138278, tree clean). Clean venv fails collection on all 6 test modules; ruff still 12 errors. Verdicts stand. |
+| 2026-10-31 15:30 | implementer | C04+C05 fixes applied (requirements.txt manifest, httpx.ASGITransport test, psycopg declared + ADR note, literal duplicate-revision-id conflict test, ruff/mypy clean) — clean venv: 28 passed, ruff/mypy green; real PG16: upgrade head + current = 0001_baseline (head). Awaiting reviewer. |
+| 2026-10-31 16:20 | reviewer | C04 ACCEPTED — clean venv from requirements.txt: 28 passed, ruff clean, mypy clean; 503 via httpx.ASGITransport. Non-blocking: pin ruff config, Python 3.12 vs 3.13. |
+| 2026-10-31 16:20 | reviewer | C05 ACCEPTED — real PG16: upgrade head -> current = 0001_baseline (head), downgrade base and re-upgrade exit 0; duplicate-revision-id conflict test added; ruff/mypy clean. Non-blocking: mako import block still fails ruff on empty migrations (fix before C10). |
+| 2026-10-31 16:20 | reviewer | C04+C05 closed; awaiting owner. C06 api.health not started. |
 ```

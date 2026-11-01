@@ -96,6 +96,6 @@ async def get_session() -> AsyncIterator[AsyncSession]:
             # connections surface as raw OSError, other failures as
             # SQLAlchemyError subclasses — all mean "no working connection".
             await session.execute(text("SELECT 1"))
-        except Exception as exc:  # noqa: BLE001 — contract: 503, never 500
+        except Exception as exc:  # contract: 503, never 500
             raise DatabaseUnavailableError("database is unreachable") from exc
         yield session

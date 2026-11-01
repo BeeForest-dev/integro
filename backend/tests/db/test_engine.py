@@ -1,11 +1,12 @@
 """Tests for C04 db.engine — one test per contract error case."""
 
 import asyncio
+from typing import Annotated
 
+import httpx
 import pytest
 from fastapi import Depends, FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette.testclient import TestClient
 
 from app.core.errors import register_error_handlers
 from app.db.engine import (
@@ -66,11 +67,16 @@ def test_unavailable_db_surfaces_as_503_response():
     init_engine(UNREACHABLE_URL)
 
     @app.get("/query")
-    async def _query(session: AsyncSession = Depends(get_session)):
+    async def _query(session: Annotated[AsyncSession, Depends(get_session)]):
         return {"ok": True}
 
-    client = TestClient(app, raise_server_exceptions=False)
-    response = client.get("/query")
+    async def _fetch() -> httpx.Response:
+        transport = httpx.ASGITransport(app=app)
+        base_url = "http://testserver"
+        async with httpx.AsyncClient(transport=transport, base_url=base_url) as client:
+            return await client.get("/query")
+
+    response = asyncio.run(_fetch())
 
     assert response.status_code == 503
     body = response.json()

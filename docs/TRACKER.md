@@ -14,8 +14,8 @@ Update this file **daily** (5 minutes) — it is the only progress source that c
 | C01 | core.config | TODO | | | | | |
 | C02 | core.logging | TODO | | | | | |
 | C03 | core.errors | TODO | | | | | |
-| C04 | db.engine | CHANGES_REQUESTED | ✓ | ✗ | ✓ | ✓ | Code conforms and 503 path proven, but no dependency manifest -> suite does not collect from a clean checkout; ruff fails. See docs/reviews/C04.md |
-| C05 | db.base + migrations | CHANGES_REQUESTED | ✗ | ✗ | ✓ | ✓ | PG path fails: psycopg undeclared (`upgrade head` -> ModuleNotFoundError); conflict test targets an unresolvable chain, not a conflict; ruff fails. See docs/reviews/C05.md |
+| C04 | db.engine | G4 | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C04.md); owner sign-off pending. Clean venv: 28 passed, ruff/mypy clean; 503 proven via httpx.ASGITransport. |
+| C05 | db.base + migrations | G4 | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C05.md); owner sign-off pending. Real PG16: upgrade head -> 0001_baseline (head); duplicate-revision-id conflict test added; ruff/mypy clean. |
 | C06 | api.health | TODO | | | | | |
 | C07 | infra.docker | TODO | | | | | |
 | C08 | ci.github-actions | TODO | | | | | |

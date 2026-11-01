@@ -23,6 +23,12 @@ Constraints:
 **Backend:** FastAPI + Pydantic v2 + SQLAlchemy 2 (async) + Alembic + PostgreSQL 16,
 Celery + Redis for background work, httpx + tenacity for outbound calls.
 
+**Database drivers:** the application connects through asynchronous `asyncpg`
+(`postgresql+asyncpg://`), while Alembic migrations run through synchronous
+`psycopg[binary]` (`postgresql+psycopg://`). `backend/alembic/env.py` converts the
+`DATABASE_URL` DSN between the two schemes at migration time, so a single
+environment variable serves both paths without a second config source.
+
 **Frontend:** React 19 + TypeScript + Vite + TanStack Query + Tailwind CSS.
 API types generated from the OpenAPI schema.
 

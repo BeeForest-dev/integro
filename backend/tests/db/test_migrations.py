@@ -10,11 +10,11 @@ import sys
 from pathlib import Path
 
 import pytest
-from alembic import command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
-from sqlalchemy import Column, Integer, Table
+from sqlalchemy import Column, Integer, Table, create_engine, text
 
+from alembic import command
 from app.db.base import Base
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
@@ -31,12 +31,66 @@ def alembic_cfg(tmp_path, monkeypatch):
     return cfg
 
 
-def test_upgrade_head_produces_schema(alembic_cfg, tmp_path):
-    """`alembic upgrade head` runs cleanly against an empty database."""
+def _write_revision(path: Path, revision: str, down_revision: str) -> None:
+    """Write a minimal no-op revision file."""
+    path.write_text(
+        f'"""{revision}"""\n'
+        f'revision = "{revision}"\n'
+        f'down_revision = "{down_revision}"\n'
+        "branch_labels = None\n"
+        "depends_on = None\n\n"
+        "def upgrade() -> None:\n"
+        "    pass\n\n"
+        "def downgrade() -> None:\n"
+        "    pass\n",
+        encoding="utf-8",
+    )
+
+
+def _write_ini(tmp_path: Path) -> Path:
+    """Write an alembic.ini with the logging sections fileConfig requires."""
+    ini = tmp_path / "alembic.ini"
+    ini.write_text(
+        "[alembic]\n"
+        f"script_location = {tmp_path / 'alembic'}\n"
+        f"sqlalchemy.url = sqlite:///{tmp_path / 'test.db'}\n"
+        "\n"
+        "[loggers]\nkeys = root\n\n"
+        "[handlers]\nkeys = console\n\n"
+        "[formatters]\nkeys = generic\n\n"
+        "[logger_root]\nlevel = WARN\nhandlers = console\nqualname =\n\n"
+        "[handler_console]\nclass = StreamHandler\nargs = (sys.stderr,)\n"
+        "level = NOTSET\nformatter = generic\n\n"
+        "[formatter_generic]\nformat = %(levelname)s %(message)s\n",
+        encoding="utf-8",
+    )
+    return ini
+
+
+def _run_alembic_cli(tmp_path: Path) -> subprocess.CompletedProcess[str]:
+    """Run `alembic upgrade head` as a real CLI subprocess."""
+    return subprocess.run(
+        [sys.executable, "-m", "alembic", "-c", str(_write_ini(tmp_path)), "upgrade", "head"],
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=str(BACKEND_DIR),
+    )
+
+
+def test_upgrade_head_produces_schema(alembic_cfg):
+    """`alembic upgrade head` stamps the database with the head revision."""
     command.upgrade(alembic_cfg, "head")
 
-    script = ScriptDirectory.from_config(alembic_cfg)
-    assert script.get_current_head() is not None
+    head = ScriptDirectory.from_config(alembic_cfg).get_current_head()
+    engine = create_engine(alembic_cfg.get_main_option("sqlalchemy.url"))
+    try:
+        with engine.connect() as connection:
+            version = connection.execute(text("SELECT version_num FROM alembic_version")).scalar()
+    finally:
+        engine.dispose()
+
+    assert version == head
 
 
 def test_autogenerate_produces_reviewable_diff(alembic_cfg, tmp_path):
@@ -55,42 +109,27 @@ def test_autogenerate_produces_reviewable_diff(alembic_cfg, tmp_path):
     assert "probe" in content
 
 
-def test_migration_conflict_exits_nonzero_with_revision_id(alembic_cfg, tmp_path):
-    """A broken revision chain -> non-zero CLI exit naming the conflicting id."""
-    (tmp_path / "alembic" / "versions" / "0002_conflict.py").write_text(
-        '"""conflict"""\n'
-        'revision = "bbbb_conflict"\n'
-        'down_revision = "aaaa_missing_conflict"\n'
-        "branch_labels = None\n"
-        "depends_on = None\n\n"
-        "def upgrade() -> None:\n"
-        "    pass\n\n"
-        "def downgrade() -> None:\n"
-        "    pass\n",
-        encoding="utf-8",
+def test_duplicate_revision_id_exits_nonzero_with_revision_id(alembic_cfg, tmp_path):
+    """Two revisions sharing one id -> non-zero exit naming the conflicting id."""
+    _write_revision(tmp_path / "alembic" / "versions" / "0002_dup_a.py", "dup_conflict", "0001_baseline")
+    _write_revision(tmp_path / "alembic" / "versions" / "0003_dup_b.py", "dup_conflict", "0001_baseline")
+
+    result = _run_alembic_cli(tmp_path)
+
+    combined_output = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert "dup_conflict" in combined_output
+
+
+def test_missing_parent_exits_nonzero_with_revision_id(alembic_cfg, tmp_path):
+    """A revision pointing at a missing parent -> non-zero exit naming the id."""
+    _write_revision(
+        tmp_path / "alembic" / "versions" / "0002_conflict.py",
+        "bbbb_conflict",
+        "aaaa_missing_conflict",
     )
 
-    ini = tmp_path / "alembic.ini"
-    ini.write_text(
-        "[alembic]\n"
-        f"script_location = {tmp_path / 'alembic'}\n"
-        f"sqlalchemy.url = sqlite:///{tmp_path / 'test.db'}\n"
-        "\n"
-        "[loggers]\nkeys = root\n\n"
-        "[handlers]\nkeys = console\n\n"
-        "[formatters]\nkeys = generic\n\n"
-        "[logger_root]\nlevel = WARN\nhandlers = console\nqualname =\n\n"
-        "[handler_console]\nclass = StreamHandler\nargs = (sys.stderr,)\n"
-        "level = NOTSET\nformatter = generic\n\n"
-        "[formatter_generic]\nformat = %(levelname)s %(message)s\n",
-        encoding="utf-8",
-    )
-    result = subprocess.run(
-        [sys.executable, "-m", "alembic", "-c", str(ini), "upgrade", "head"],
-        capture_output=True,
-        text=True,
-        cwd=str(BACKEND_DIR),
-    )
+    result = _run_alembic_cli(tmp_path)
 
     combined_output = result.stdout + result.stderr
     assert result.returncode != 0

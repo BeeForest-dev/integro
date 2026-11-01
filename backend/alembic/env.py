@@ -8,18 +8,19 @@ The database URL is taken from the ``DATABASE_URL`` environment variable
 (falling back to ``sqlalchemy.url`` in alembic.ini) and the async DSN used
 by the app (``postgresql+asyncpg://``) is converted to the synchronous
 psycopg DSN Alembic connects with.
+
+Run Alembic from ``backend/`` — ``alembic.ini`` puts that directory on
+``sys.path`` (``prepend_sys_path = .``), which is how this module imports
+``app.db.base``.
 """
 
 import os
-import sys
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from app.db.base import Base  # noqa: E402
+from alembic import context
+from app.db.base import Base
 
 config = context.config
 
