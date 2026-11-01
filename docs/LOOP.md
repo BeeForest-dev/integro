@@ -31,22 +31,20 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C07
 Name:        infra.docker
-State:       CONTRACTED
+State:       CHANGES_REQUESTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
 Awaiting:    implementer
 Contract:    see docs/CONTRACTS.md, section C07
-Delivery:    docs/reviews/C07.md (create it; template in this file)
-Note:        owner instructed to start. Decisions (reviewer, binding):
-             - real Celery app + `ping` task, no sleep placeholder;
-             - celery added to requirements (already allow-listed, fixed stack);
-             - broker = REDIS_URL (db 0), result backend = same URL db 1; no new
-               Settings fields;
-             - beat healthcheck via pidfile, worker healthcheck via `inspect ping`;
-             - minimal mock-crm (FastAPI) in infra/mock-crm;
-             - root compose.yaml, Dockerfile in infra/, python:3.13-slim.
-             Do not touch C06 code. Do not start C08.
+Delivery:    docs/reviews/C07.md
+Note:        G3/G4 pass, G1/G2 fail. Required: (1) English only - translate the
+             3 comments in compose.yaml and rewrite the C07 delivery note in
+             English; (2) drop the hardcoded `redis://localhost:6379/0` fallback
+             in workers/celery_app.py and fail fast on missing REDIS_URL;
+             (3) add a test asserting "app.workers.tasks" is in
+             app.conf.include. Details in docs/reviews/C07.md.
+             Do not start C08. C06 code stays untouched.
 ```
 
 ## Log (append only, newest last)
@@ -62,7 +60,7 @@ Note:        owner instructed to start. Decisions (reviewer, binding):
 | 2026-10-22 12:55 | reviewer | C03 ACCEPTED (G1–G4 pass, 17/17 tests green) |
 | 2026-10-22 12:56 | owner | Move to C04 db.engine — CONTRACTED, awaiting implementer |
 | 2026-10-22 13:40 | implementer | C04 GENERATED (db.engine + 6 tests) — awaiting reviewer |
-| 2026-10-22 13:55 | owner | instruction "дальше" — start C05 while C04 review still pending |
+| 2026-10-22 13:55 | owner | instruction "continue" — start C05 while C04 review still pending |
 | 2026-10-22 14:20 | implementer | C05 GENERATED (db.base + alembic wiring + 6 tests) — awaiting reviewer |
 | 2026-10-26 14:05 | reviewer | C04 CHANGES_REQUESTED — code passes G1/G3/G4, but suite cannot collect in a clean checkout (no manifest) and ruff fails; see docs/reviews/C04.md |
 | 2026-10-26 14:05 | reviewer | C05 CHANGES_REQUESTED — `alembic upgrade head` on real PostgreSQL fails (psycopg undeclared), conflict test targets the wrong case, ruff fails; see docs/reviews/C05.md |
@@ -74,6 +72,7 @@ Note:        owner instructed to start. Decisions (reviewer, binding):
 | 2026-10-31 17:05 | owner | decisions: prometheus-client allowed; Python 3.13; ruff config pinned + Alembic template fixed. |
 | 2026-10-31 17:10 | reviewer | chore: `backend/pyproject.toml` (ruff, py313, isort known-third-party=alembic, F401 ignore for generated revisions), `script.py.mako` import order + blank-line fix, E501 wraps, `AGENTS.md` (3.13, prometheus-client), ADR 0001, `.python-version`. Clean venv: 28 passed, ruff/mypy clean; generated migrations (empty and with ops) pass ruff; PG16 upgrade/downgrade/re-upgrade exit 0. |
 | 2026-10-31 17:10 | reviewer | C06 api.health CONTRACTED — awaiting implementer. |
+| 2026-10-31 20:30 | implementer | C07 GENERATED (workers celery_app+ping, infra/Dockerfile, mock-crm, root compose.yaml 7/7 healthy, .dockerignore; requirements +celery==5.6.3) — clean venv: 38 passed, ruff/mypy clean; compose build/up/down -v exit 0; e2e ping.delay().get() -> pong; worker/beat healthcheck negatives exit 1. Awaiting reviewer. |
 | 2026-10-31 18:30 | implementer | C06 GENERATED (api/health + db/redis + main.py lifespan + 8 tests; requirements +uvicorn[standard]==0.54.0, redis==8.1.0, prometheus-client==0.26.0) — clean venv: 36 passed, ruff/mypy clean; live pg16+redis7: /ready 200, redis stopped -> 503 failed=["redis"]. Awaiting reviewer. |
 | 2026-10-31 19:15 | implementer | C06 fix: added test_ready_reports_real_unreachable_redis (real init_redis/check_redis via port-1 refused connection) — clean venv: 37 passed, ruff/mypy clean. Awaiting reviewer. |
 | 2026-10-31 19:10 | reviewer | C06 CHANGES_REQUESTED — G1/G3/G4 pass; clean venv 36 passed, live stand verified (redis down -> 503, both down -> failed=["db","redis"], /health stays 200, no DSN in logs). G2 fails: check_redis/init_redis are never executed by tests. One test required; see docs/reviews/C06.md. |
@@ -81,5 +80,6 @@ Note:        owner instructed to start. Decisions (reviewer, binding):
 | 2026-10-31 20:05 | reviewer | C06 ACCEPTED — 37 passed, ruff/mypy clean; mutation check confirms the new test fails when PING is broken, so it guards the real path. Awaiting owner sign-off. C07 not started. |
 | 2026-10-31 20:30 | owner | start C07 infra.docker; reviewer to choose the worker/mock-crm approach. |
 | 2026-10-31 20:35 | reviewer | C07 CONTRACTED — decisions: real Celery app + ping task (celery already allow-listed), worker healthcheck via `inspect ping`, beat via pidfile, minimal FastAPI mock-crm, root compose.yaml + infra/Dockerfile on python:3.13-slim. Awaiting implementer. |
-| 2026-10-31 21:00 | owner | approved C01–C06; tracker set to ACCEPTED with owner sign-off. C07 continues. |
+| 2026-10-31 21:00 | owner | approved C01-C06; tracker set to ACCEPTED with owner sign-off. C07 continues. |
+| 2026-10-31 21:40 | reviewer | C07 CHANGES_REQUESTED — build 0, up 21.3 s, 7/7 healthy, e2e ping -> pong, healthcheck negatives exit 1, down -v clean; G3/G4 pass. G1: Russian in compose.yaml and in the delivery note, hardcoded localhost fallback. G2: the `include=` registry line has no CI guard. See docs/reviews/C07.md. |
 ```

@@ -86,7 +86,8 @@ Purpose:    multi-stage Dockerfile + compose for api, worker, beat, postgres, re
 In -> Out:  `docker compose up` -> 7 healthy services within 60 s.
 Errors:     image build fails -> build log shows the failing step.
 Side fx:    creates volumes for postgres data.
-Deps:       docker only (no python deps added).
+Deps:       docker + celery==5.6.3 (allow-listed; deviation approved 2026-10-31,
+            see docs/reviews/C07.md). No other python deps added.
 ```
 
 ### C08 `ci.github-actions`

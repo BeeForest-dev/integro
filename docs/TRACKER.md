@@ -17,7 +17,7 @@ Update this file **daily** (5 minutes) — it is the only progress source that c
 | C04 | db.engine | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C04.md); owner sign-off 2026-10-31. Clean venv: 28 passed, ruff/mypy clean; 503 proven via httpx.ASGITransport. |
 | C05 | db.base + migrations | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C05.md); owner sign-off 2026-10-31. Real PG16: upgrade head -> 0001_baseline (head); duplicate-revision-id conflict test added; ruff/mypy clean. |
 | C06 | api.health | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C06.md); owner sign-off 2026-10-31. 37 passed; live stand: /ready 200, redis down -> 503 failed=["redis"], both down -> failed=["db","redis"], /health stays 200. Mutation check proves the Redis test guards the real PING path. |
-| C07 | infra.docker | TODO | | | | | |
+| C07 | infra.docker | CHANGES_REQUESTED | ✗ | ✗ | ✓ | ✓ | Reviewer verified: build 0, 7/7 healthy in 21.3 s, e2e ping -> pong, healthcheck negatives exit 1, down -v clean, uid 1000, no secrets. G1: Russian comments in compose.yaml + Russian delivery note; hardcoded `redis://localhost:6379/0` fallback. G2: no test guards `include=["app.workers.tasks"]`. See docs/reviews/C07.md |
 | C08 | ci.github-actions | TODO | | | | | |
 | C09 | api.request_context | TODO | | | | | |
 
