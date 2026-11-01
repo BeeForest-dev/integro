@@ -10,11 +10,11 @@ import sys
 from pathlib import Path
 
 import pytest
+from alembic import command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 from sqlalchemy import Column, Integer, Table, create_engine, text
 
-from alembic import command
 from app.db.base import Base
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
@@ -111,8 +111,16 @@ def test_autogenerate_produces_reviewable_diff(alembic_cfg, tmp_path):
 
 def test_duplicate_revision_id_exits_nonzero_with_revision_id(alembic_cfg, tmp_path):
     """Two revisions sharing one id -> non-zero exit naming the conflicting id."""
-    _write_revision(tmp_path / "alembic" / "versions" / "0002_dup_a.py", "dup_conflict", "0001_baseline")
-    _write_revision(tmp_path / "alembic" / "versions" / "0003_dup_b.py", "dup_conflict", "0001_baseline")
+    _write_revision(
+        tmp_path / "alembic" / "versions" / "0002_dup_a.py",
+        "dup_conflict",
+        "0001_baseline",
+    )
+    _write_revision(
+        tmp_path / "alembic" / "versions" / "0003_dup_b.py",
+        "dup_conflict",
+        "0001_baseline",
+    )
 
     result = _run_alembic_cli(tmp_path)
 

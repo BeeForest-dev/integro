@@ -32,7 +32,7 @@ exactly as written, with tests, and stop when the contract is satisfied.
    ```
    fastapi, uvicorn[standard], pydantic, pydantic-settings, sqlalchemy, alembic,
    asyncpg, psycopg[binary], celery, redis, httpx, tenacity, structlog,
-   cryptography, argon2-cffi, jinja2, python-multipart,
+   cryptography, argon2-cffi, jinja2, python-multipart, prometheus-client,
    pytest, pytest-asyncio, pytest-cov, respx, factory-boy,
    ruff, mypy
    ```
@@ -145,7 +145,7 @@ spidoznye_kozyvki2/          # repo root (GitHub name: integro)
 
 ## 7. Stack (fixed)
 
-Backend: Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2 (async), Alembic,
+Backend: Python 3.13, FastAPI, Pydantic v2, SQLAlchemy 2 (async), Alembic,
 PostgreSQL 16, Celery + Redis, httpx, tenacity, structlog, cryptography.
 
 Frontend: React 19 + TypeScript + Vite + TanStack Query + React Router + Tailwind CSS.

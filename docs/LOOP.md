@@ -29,17 +29,19 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ## Current contract
 
 ```
-ID:          C05
-Name:        db.base + db.migrations
-State:       ACCEPTED
+ID:          C06
+Name:        api.health
+State:       CONTRACTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    owner
-Contract:    see docs/CONTRACTS.md, section C05
-Delivery:    docs/reviews/C05.md
-Note:        C04 db.engine is also ACCEPTED (docs/reviews/C04.md).
-             Owner decides whether to start C06 api.health; do not start it unprompted.
+Awaiting:    implementer
+Contract:    see docs/CONTRACTS.md, section C06
+Delivery:    docs/reviews/C06.md (create it; template in this file)
+Note:        Scope includes app/main.py (create_app + lifespan). Deps: fastapi,
+             prometheus_client (newly allow-listed), redis. Do not start C07.
+             New tooling is in place: backend/pyproject.toml pins ruff; the
+             Alembic template now produces ruff-clean migrations.
 ```
 
 ## Log (append only, newest last)
@@ -64,4 +66,7 @@ Note:        C04 db.engine is also ACCEPTED (docs/reviews/C04.md).
 | 2026-10-31 16:20 | reviewer | C04 ACCEPTED — clean venv from requirements.txt: 28 passed, ruff clean, mypy clean; 503 via httpx.ASGITransport. Non-blocking: pin ruff config, Python 3.12 vs 3.13. |
 | 2026-10-31 16:20 | reviewer | C05 ACCEPTED — real PG16: upgrade head -> current = 0001_baseline (head), downgrade base and re-upgrade exit 0; duplicate-revision-id conflict test added; ruff/mypy clean. Non-blocking: mako import block still fails ruff on empty migrations (fix before C10). |
 | 2026-10-31 16:20 | reviewer | C04+C05 closed; awaiting owner. C06 api.health not started. |
+| 2026-10-31 17:05 | owner | decisions: prometheus-client allowed; Python 3.13; ruff config pinned + Alembic template fixed. |
+| 2026-10-31 17:10 | reviewer | chore: `backend/pyproject.toml` (ruff, py313, isort known-third-party=alembic, F401 ignore for generated revisions), `script.py.mako` import order + blank-line fix, E501 wraps, `AGENTS.md` (3.13, prometheus-client), ADR 0001, `.python-version`. Clean venv: 28 passed, ruff/mypy clean; generated migrations (empty and with ops) pass ruff; PG16 upgrade/downgrade/re-upgrade exit 0. |
+| 2026-10-31 17:10 | reviewer | C06 api.health CONTRACTED — awaiting implementer. |
 ```

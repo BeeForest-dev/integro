@@ -74,7 +74,9 @@ In -> Out:  GET /health  -> 200 {"status":"ok"} (liveness, no deps)
             GET /metrics -> Prometheus text format
 Errors:     dependency down -> /ready returns 503 with the failing dependency name.
 Side fx:    reads DB + Redis.
-Deps:       fastapi, prometheus_client.
+Deps:       fastapi, prometheus_client, redis.
+Note:       also creates app/main.py (create_app + lifespan wiring for the engine
+            and the Redis client). No other endpoints in this contract.
 ```
 
 ### C07 `infra.docker`

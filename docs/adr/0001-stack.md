@@ -23,6 +23,15 @@ Constraints:
 **Backend:** FastAPI + Pydantic v2 + SQLAlchemy 2 (async) + Alembic + PostgreSQL 16,
 Celery + Redis for background work, httpx + tenacity for outbound calls.
 
+**Python:** 3.13 (`.python-version`, Docker base image, CI). Chosen because the whole
+pinned stack is already green on 3.13.1, it has a longer support window than 3.12, and
+3.12 is not installed on the development machine. 3.14 is deliberately avoided until
+Celery and the connector libraries catch up.
+
+**Metrics:** `prometheus-client` exposes `/metrics` in the Prometheus text format.
+The registry is per process, so multi-worker deployments need the library's
+multiprocess mode; the demo runs a single uvicorn worker.
+
 **Database drivers:** the application connects through asynchronous `asyncpg`
 (`postgresql+asyncpg://`), while Alembic migrations run through synchronous
 `psycopg[binary]` (`postgresql+psycopg://`). `backend/alembic/env.py` converts the
