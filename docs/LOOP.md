@@ -29,18 +29,24 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ## Current contract
 
 ```
-ID:          C06
-Name:        api.health
-State:       ACCEPTED
+ID:          C07
+Name:        infra.docker
+State:       CONTRACTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    owner
-Contract:    see docs/CONTRACTS.md, section C06
-Delivery:    docs/reviews/C06.md
-Note:        reviewer verdict ACCEPTED after one fix round; owner sign-off pending.
-             Non-blocking: wire setup_logging() in C09; pydantic mypy plugin in C08;
-             teardown try/finally. Do not start C07 unprompted.
+Awaiting:    implementer
+Contract:    see docs/CONTRACTS.md, section C07
+Delivery:    docs/reviews/C07.md (create it; template in this file)
+Note:        owner instructed to start. Decisions (reviewer, binding):
+             - real Celery app + `ping` task, no sleep placeholder;
+             - celery added to requirements (already allow-listed, fixed stack);
+             - broker = REDIS_URL (db 0), result backend = same URL db 1; no new
+               Settings fields;
+             - beat healthcheck via pidfile, worker healthcheck via `inspect ping`;
+             - minimal mock-crm (FastAPI) in infra/mock-crm;
+             - root compose.yaml, Dockerfile in infra/, python:3.13-slim.
+             Do not touch C06 code. Do not start C08.
 ```
 
 ## Log (append only, newest last)
@@ -73,4 +79,6 @@ Note:        reviewer verdict ACCEPTED after one fix round; owner sign-off pendi
 | 2026-10-31 19:10 | reviewer | C06 CHANGES_REQUESTED — G1/G3/G4 pass; clean venv 36 passed, live stand verified (redis down -> 503, both down -> failed=["db","redis"], /health stays 200, no DSN in logs). G2 fails: check_redis/init_redis are never executed by tests. One test required; see docs/reviews/C06.md. |
 | 2026-10-31 19:45 | implementer | C06 fix applied: test_ready_reports_real_unreachable_redis added (real init_redis/check_redis, port 1) — clean venv: 37 passed, ruff/mypy clean. Awaiting reviewer. |
 | 2026-10-31 20:05 | reviewer | C06 ACCEPTED — 37 passed, ruff/mypy clean; mutation check confirms the new test fails when PING is broken, so it guards the real path. Awaiting owner sign-off. C07 not started. |
+| 2026-10-31 20:30 | owner | start C07 infra.docker; reviewer to choose the worker/mock-crm approach. |
+| 2026-10-31 20:35 | reviewer | C07 CONTRACTED — decisions: real Celery app + ping task (celery already allow-listed), worker healthcheck via `inspect ping`, beat via pidfile, minimal FastAPI mock-crm, root compose.yaml + infra/Dockerfile on python:3.13-slim. Awaiting implementer. |
 ```
