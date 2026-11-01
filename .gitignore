@@ -1,0 +1,58 @@
+# --- secrets (critical: never commit real credentials) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+local_settings.json
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# --- Node / frontend ---
+node_modules/
+.vite/
+npm-debug.log*
+yarn-error.log*
+/frontend/dist/
+/frontend/build/
+/frontend/.next/
+playwright-report/
+test-results/
+
+# --- local data & databases ---
+*.db
+*.sqlite3
+*.sqlite
+/data/
+/uploads/
+pgdata/
+
+# --- IDE / OS ---
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- misc ---
+*.log
+tmp/
