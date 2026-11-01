@@ -31,17 +31,16 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C06
 Name:        api.health
-State:       CHANGES_REQUESTED
+State:       ACCEPTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    implementer
+Awaiting:    owner
 Contract:    see docs/CONTRACTS.md, section C06
 Delivery:    docs/reviews/C06.md
-Note:        one required change: add the real Redis path test (init_redis to
-             127.0.0.1:1 -> /ready 503 failed=["redis"]); check_redis is
-             currently never executed by the suite. Everything else passes
-             G1/G3/G4. See docs/reviews/C06.md. Do not start C07.
+Note:        reviewer verdict ACCEPTED after one fix round; owner sign-off pending.
+             Non-blocking: wire setup_logging() in C09; pydantic mypy plugin in C08;
+             teardown try/finally. Do not start C07 unprompted.
 ```
 
 ## Log (append only, newest last)
@@ -70,5 +69,8 @@ Note:        one required change: add the real Redis path test (init_redis to
 | 2026-10-31 17:10 | reviewer | chore: `backend/pyproject.toml` (ruff, py313, isort known-third-party=alembic, F401 ignore for generated revisions), `script.py.mako` import order + blank-line fix, E501 wraps, `AGENTS.md` (3.13, prometheus-client), ADR 0001, `.python-version`. Clean venv: 28 passed, ruff/mypy clean; generated migrations (empty and with ops) pass ruff; PG16 upgrade/downgrade/re-upgrade exit 0. |
 | 2026-10-31 17:10 | reviewer | C06 api.health CONTRACTED — awaiting implementer. |
 | 2026-10-31 18:30 | implementer | C06 GENERATED (api/health + db/redis + main.py lifespan + 8 tests; requirements +uvicorn[standard]==0.54.0, redis==8.1.0, prometheus-client==0.26.0) — clean venv: 36 passed, ruff/mypy clean; live pg16+redis7: /ready 200, redis stopped -> 503 failed=["redis"]. Awaiting reviewer. |
+| 2026-10-31 19:15 | implementer | C06 fix: added test_ready_reports_real_unreachable_redis (real init_redis/check_redis via port-1 refused connection) — clean venv: 37 passed, ruff/mypy clean. Awaiting reviewer. |
 | 2026-10-31 19:10 | reviewer | C06 CHANGES_REQUESTED — G1/G3/G4 pass; clean venv 36 passed, live stand verified (redis down -> 503, both down -> failed=["db","redis"], /health stays 200, no DSN in logs). G2 fails: check_redis/init_redis are never executed by tests. One test required; see docs/reviews/C06.md. |
+| 2026-10-31 19:45 | implementer | C06 fix applied: test_ready_reports_real_unreachable_redis added (real init_redis/check_redis, port 1) — clean venv: 37 passed, ruff/mypy clean. Awaiting reviewer. |
+| 2026-10-31 20:05 | reviewer | C06 ACCEPTED — 37 passed, ruff/mypy clean; mutation check confirms the new test fails when PING is broken, so it guards the real path. Awaiting owner sign-off. C07 not started. |
 ```

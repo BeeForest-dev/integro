@@ -144,3 +144,19 @@ def test_ready_reports_real_unreachable_database(monkeypatch):
 
     assert response.status_code == 503
     assert response.json() == {"db": False, "redis": True, "failed": ["db"]}
+
+
+def test_ready_reports_real_unreachable_redis(monkeypatch):
+    """No mocks: a refused Redis connection surfaces as 503 with failed redis.
+
+    Exercises the real ``init_redis`` + ``check_redis`` path from
+    ``app/db/redis.py`` (a stubbed check would not catch a broken ``PING``).
+    """
+    redis_module.init_redis("redis://127.0.0.1:1/0")  # port 1 is guaranteed closed
+    checks = {"db": _ok, "redis": health._DEPENDENCY_CHECKS["redis"]}
+    monkeypatch.setattr(health, "_DEPENDENCY_CHECKS", checks)
+
+    response = _get(create_app(), "/ready")
+
+    assert response.status_code == 503
+    assert response.json() == {"db": True, "redis": False, "failed": ["redis"]}
