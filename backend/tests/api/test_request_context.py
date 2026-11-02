@@ -95,12 +95,23 @@ def test_correlation_id_present_in_log_output(capsys):
 
 
 def test_context_cleared_after_request():
-    """The correlation id does not leak into the next request's context."""
-    app = _build_app()
-    first = _get(app, "/probe")
-    uuid.UUID(first.headers["x-request-id"])
+    """The correlation id does not leak into the next request's context.
 
-    assert "correlation_id" not in structlog.contextvars.get_contextvars()
+    The request and the assertion must run in the same coroutine: cleanup
+    happens inside the middleware's task context, and checking from another
+    context would pass even if the ``finally`` block did nothing.
+    """
+
+    async def scenario() -> None:
+        transport = httpx.ASGITransport(app=_build_app())
+        base_url = "http://testserver"
+        async with httpx.AsyncClient(transport=transport, base_url=base_url) as client:
+            response = await client.get("/probe")
+        uuid.UUID(response.headers["x-request-id"])  # a valid id was assigned
+
+        assert "correlation_id" not in structlog.contextvars.get_contextvars()
+
+    asyncio.run(scenario())
 
 
 def test_create_app_registers_middleware():
