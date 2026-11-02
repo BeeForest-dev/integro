@@ -31,11 +31,11 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C09
 Name:        api.request_context
-State:       GENERATED
+State:       CHANGES_REQUESTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    reviewer
+Awaiting:    implementer
 Contract:    see docs/CONTRACTS.md, section C09
 Delivery:    docs/reviews/C09.md
 Note:        Reviewer decisions: pure ASGI middleware RequestContextMiddleware
@@ -49,6 +49,11 @@ Note:        Reviewer decisions: pure ASGI middleware RequestContextMiddleware
              httpx.ASGITransport + AsyncClient: missing/valid/invalid header,
              id present in log output, context cleared after request.
              Deps: fastapi, structlog only - no new dependencies. Stop after C09.
+             CHANGES_REQUESTED 2026-11-02: context-cleanup test is a false
+             green (asserts in the outer asyncio.run context; passes with the
+             finally body removed). One test rewrite required - see
+             docs/reviews/C09.md. Everything else passes (45 green, ruff/mypy
+             clean, invalid-uuid mutation caught).
 ```
 
 ## Log (append only, newest last)
@@ -95,5 +100,6 @@ Note:        Reviewer decisions: pure ASGI middleware RequestContextMiddleware
 | 2026-11-02 15:20 | reviewer | C08 ACCEPTED - run 41442602755 on 480ab60 verified via API (success) + raw job log: ruff clean, mypy clean (15 files), 39 passed in 4.22s, postgres:16 + redis:7 created, docker compose build success. Awaiting owner sign-off. C09 not started. |
 | 2026-11-02 15:35 | owner | C08 sign-off -> ACCEPTED in docs/TRACKER.md. M0 remaining: C09. |
 | 2026-11-02 15:40 | reviewer | C09 api.request_context CONTRACTED - pure ASGI middleware, x-request-id, C02 contextvars binding with finally-cleanup, httpx.ASGITransport tests. Awaiting implementer. |
+| 2026-11-02 17:10 | reviewer | C09 CHANGES_REQUESTED - code passes G1/G3/G4 and 45 tests green, but the context-cleanup test is a false green: mutation (finally body -> no-op) still passes it; assertion runs in the outer asyncio.run context, not the request's. One test rewrite required. See docs/reviews/C09.md. |
 | 2026-11-02 12:15 | implementer | C08 GENERATED: .github/workflows/ci.yml (checks job with pg16+redis7 service containers, ruff/mypy --warn-unused-ignores/pytest; docker compose build job) - committed 480ab60 and pushed; real CI run #1 conclusion=success, both jobs green in 55 s (run 41442602755). Awaiting reviewer. |
 | 2026-11-02 15:40 | implementer | C09 GENERATED: pure ASGI RequestContextMiddleware (reuse valid x-request-id / uuid4, structlog contextvars bind + finally clear, response echo), registered in create_app; 6 new tests - clean venv: 45 passed, ruff/mypy --warn-unused-ignores clean. Awaiting reviewer. |
