@@ -12,6 +12,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.api import health
+from app.api.middleware import RequestContextMiddleware
 from app.core.config import Settings
 from app.core.errors import register_error_handlers
 from app.db.engine import dispose_engine, init_engine
@@ -35,6 +36,7 @@ def create_app() -> FastAPI:
     """Build the FastAPI application with error handlers and health routes."""
     app = FastAPI(lifespan=_lifespan)
     register_error_handlers(app)
+    app.add_middleware(RequestContextMiddleware)
     app.include_router(health.router)
     return app
 
