@@ -31,29 +31,22 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C09
 Name:        api.request_context
-State:       GENERATED
+State:       ACCEPTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    reviewer
+Awaiting:    owner
 Contract:    see docs/CONTRACTS.md, section C09
 Delivery:    docs/reviews/C09.md
-Note:        Reviewer decisions: pure ASGI middleware RequestContextMiddleware
-             in backend/app/api/middleware.py (no BaseHTTPMiddleware),
-             registered in main.py via add_middleware; header x-request-id -
-             valid uuid reused, missing/invalid -> uuid4; id bound via C02
-             bind_correlation_id into structlog contextvars and cleared after
-             the response (finally), so log lines include it and nothing leaks
-             between requests; response echoes the header. Tests in
-             backend/tests/api/test_request_context.py via
-             httpx.ASGITransport + AsyncClient: missing/valid/invalid header,
-             id present in log output, context cleared after request.
-             Deps: fastapi, structlog only - no new dependencies. Stop after C09.
-             CHANGES_REQUESTED 2026-11-02: context-cleanup test is a false
-             green (asserts in the outer asyncio.run context; passes with the
-             finally body removed). One test rewrite required - see
-             docs/reviews/C09.md. Everything else passes (45 green, ruff/mypy
-             clean, invalid-uuid mutation caught).
+Note:        Pure ASGI middleware in app/api/middleware.py; x-request-id valid
+             uuid reused, missing/invalid -> uuid4; bound via C02
+             bind_correlation_id; echoed on http.response.start; cleared in
+             finally; registered in create_app. 6 tests incl. same-coroutine
+             context-cleanup test (mutation-proven).
+             ACCEPTED 2026-11-02 after one fix round: cleanup test rewritten
+             to run request + assert in one coroutine; mutation (finally ->
+             no-op) now fails it. 45 passed, ruff/mypy clean. Awaiting owner
+             sign-off. M0 (Sprint 1) complete after sign-off.
 ```
 
 ## Log (append only, newest last)
@@ -104,3 +97,4 @@ Note:        Reviewer decisions: pure ASGI middleware RequestContextMiddleware
 | 2026-11-02 12:15 | implementer | C08 GENERATED: .github/workflows/ci.yml (checks job with pg16+redis7 service containers, ruff/mypy --warn-unused-ignores/pytest; docker compose build job) - committed 480ab60 and pushed; real CI run #1 conclusion=success, both jobs green in 55 s (run 41442602755). Awaiting reviewer. |
 | 2026-11-02 15:40 | implementer | C09 GENERATED: pure ASGI RequestContextMiddleware (reuse valid x-request-id / uuid4, structlog contextvars bind + finally clear, response echo), registered in create_app; 6 new tests - clean venv: 45 passed, ruff/mypy --warn-unused-ignores clean. Awaiting reviewer. |
 | 2026-11-02 17:20 | implementer | C09 fix: test_context_cleared_after_request rewritten — request + assert in one coroutine (the old shape passed even with cleanup disabled); mutation self-check done (finally -> pass makes the test fail; restored; suite 45 passed, ruff/mypy clean). Awaiting reviewer. |
+| 2026-11-02 17:50 | reviewer | C09 ACCEPTED after fix round - cleanup test rewritten to one coroutine; mutation re-run by reviewer fails the test as required; 45 passed, ruff/mypy clean; middleware untouched. Awaiting owner sign-off. M0 (Sprint 1) complete after sign-off. |
