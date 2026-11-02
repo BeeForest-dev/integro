@@ -29,24 +29,38 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ## Current contract
 
 ```
-ID:          C09
-Name:        api.request_context
-State:       ACCEPTED
+ID:          C10
+Name:        models.organization
+State:       CONTRACTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    owner
-Contract:    see docs/CONTRACTS.md, section C09
-Delivery:    docs/reviews/C09.md
-Note:        Pure ASGI middleware in app/api/middleware.py; x-request-id valid
-             uuid reused, missing/invalid -> uuid4; bound via C02
-             bind_correlation_id; echoed on http.response.start; cleared in
-             finally; registered in create_app. 6 tests incl. same-coroutine
-             context-cleanup test (mutation-proven).
-             ACCEPTED 2026-11-02 after one fix round: cleanup test rewritten
-             to run request + assert in one coroutine; mutation (finally ->
-             no-op) now fails it. 45 passed, ruff/mypy clean. Awaiting owner
-             sign-off. M0 (Sprint 1) complete after sign-off.
+Awaiting:    implementer
+Contract:    see docs/CONTRACTS.md, section C10
+Delivery:    docs/reviews/C10.md
+Note:        Reviewer decisions:
+             - backend/app/models/organization.py: Organization(Base) with
+               id (sa.Uuid, pk, default uuid4), name (str, not null),
+               slug (str, not null, unique, indexed), plan (str,
+               default "free"), created_at (DateTime tz-aware,
+               server_default now()).
+             - backend/app/models/__init__.py imports Organization so
+               Base.metadata sees it; alembic/env.py gains
+               `import app.models  # noqa: F401` so autogenerate works.
+             - Migration 0002_organizations (autogenerate, hand-checked):
+               upgrade head creates the table, downgrade base drops it,
+               re-upgrade idempotent - proven on real PG16.
+             - backend/app/repositories/organizations.py (repositories
+               layer starts here): create_organization(session, name, slug,
+               plan) -> Organization; IntegrityError on the slug unique
+               constraint -> AppError 409 "slug already exists" (C03).
+             - Tests run against a REAL PostgreSQL: DATABASE_URL env
+               (docker compose up -d postgres locally; CI provides the
+               service container). No sqlite stand-in. Tests: migration
+               up/down/re-up creates and drops the table; create persists
+               with uuid id + defaults; duplicate slug -> AppError 409;
+               unique index present. No API endpoints (out of contract).
+             Deps: sqlalchemy, alembic, asyncpg (all present). Stop after C10.
 ```
 
 ## Log (append only, newest last)
@@ -98,3 +112,5 @@ Note:        Pure ASGI middleware in app/api/middleware.py; x-request-id valid
 | 2026-11-02 15:40 | implementer | C09 GENERATED: pure ASGI RequestContextMiddleware (reuse valid x-request-id / uuid4, structlog contextvars bind + finally clear, response echo), registered in create_app; 6 new tests - clean venv: 45 passed, ruff/mypy --warn-unused-ignores clean. Awaiting reviewer. |
 | 2026-11-02 17:20 | implementer | C09 fix: test_context_cleared_after_request rewritten — request + assert in one coroutine (the old shape passed even with cleanup disabled); mutation self-check done (finally -> pass makes the test fail; restored; suite 45 passed, ruff/mypy clean). Awaiting reviewer. |
 | 2026-11-02 17:50 | reviewer | C09 ACCEPTED after fix round - cleanup test rewritten to one coroutine; mutation re-run by reviewer fails the test as required; 45 passed, ruff/mypy clean; middleware untouched. Awaiting owner sign-off. M0 (Sprint 1) complete after sign-off. |
+| 2026-11-02 18:10 | owner | start C10 models.organization (Sprint 2 / M1). C09 sign-off still pending. |
+| 2026-11-02 18:15 | reviewer | C10 CONTRACTED - Organization model (uuid pk, slug unique, plan, created_at), migration 0002 proven on real PG16, repositories layer starts (create_organization, 409 on duplicate slug), tests against real PostgreSQL (compose/CI service). Awaiting implementer. |
