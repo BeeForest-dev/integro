@@ -29,20 +29,25 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ## Current contract
 
 ```
-ID:          C07
-Name:        infra.docker
-State:       ACCEPTED
+ID:          C08
+Name:        ci.github-actions
+State:       CONTRACTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    owner
-Contract:    see docs/CONTRACTS.md, section C07
-Delivery:    docs/reviews/C07.md
-Note:        G1-G4 pass after the fix round. Verified: 39 passed, ruff/mypy
-             clean, fail-fast on missing REDIS_URL, mutation check on the
-             include= registry guard, compose build/up 7/7 healthy, e2e
-             ping -> pong, healthcheck negatives exit 1, down -v clean.
-             Owner sign-off pending. Do not start C08.
+Awaiting:    implementer
+Contract:    see docs/CONTRACTS.md, section C08
+Delivery:    docs/reviews/C08.md
+Note:        Reviewer decisions: workflow .github/workflows/ci.yml; triggers
+             push to master + pull_request; job "checks" on ubuntu-latest
+             (python 3.13, pip cache): checkout -> setup-python ->
+             pip install -r backend/requirements.txt -> ruff check . ->
+             mypy app --warn-unused-ignores -> pytest, with postgres:16 and
+             redis:7 service containers (health-checked) and DATABASE_URL /
+             REDIS_URL env pointing at them; job "docker": docker compose
+             build (all services). Status check works from the first push;
+             README badge is deferred to the README (M6) - not part of this
+             contract. No secrets, no new dependencies. Stop after C08.
 ```
 
 ## Log (append only, newest last)
@@ -84,3 +89,5 @@ Note:        G1-G4 pass after the fix round. Verified: 39 passed, ruff/mypy
 | 2026-10-31 22:40 | implementer | C07 fixes applied: English-only compose comments + full English review note; REDIS_URL via os.environ[] (no localhost fallback, loud startup failure); CI guard test for include=["app.workers.tasks"]; dropped worker->api / beat->worker edges; mock-crm image non-root; build/env x-anchors — clean venv: 39 passed, ruff/mypy clean; compose build/up --wait 60 -> 7/7 healthy, e2e ping -> pong, down -v clean. Awaiting reviewer. |
 | 2026-10-31 23:15 | reviewer | C07 ACCEPTED - 39 passed, ruff/mypy clean (+ --warn-unused-ignores); missing REDIS_URL -> KeyError exit 1; mutation (remove include=) fails the registry guard, restore hash-identical; compose build 0, up 21.2 s -> 7/7 healthy; /health 200, /ready 200 {"db":true,"redis":true}, /metrics 200; e2e pong; uid 1000; worker healthcheck negative exit 1; down -v clean. Awaiting owner sign-off. C08 not started. |
 | 2026-11-01 10:00 | owner | C07 sign-off -> ACCEPTED in docs/TRACKER.md. M0 remaining: C08, C09. |
+| 2026-11-01 18:30 | owner | GitHub account BeeForest-dev created; repo github.com/BeeForest-dev/integro pushed (17 commits). |
+| 2026-11-02 09:30 | reviewer | C08 ci.github-actions CONTRACTED - workflow ci.yml, checks job (ruff/mypy/pytest + PG16/Redis7 services) + docker compose build job; badge deferred to README (M6). Awaiting implementer. |
