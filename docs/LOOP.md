@@ -31,11 +31,11 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C10
 Name:        models.organization
-State:       CONTRACTED
+State:       GENERATED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    implementer
+Awaiting:    reviewer
 Contract:    see docs/CONTRACTS.md, section C10
 Delivery:    docs/reviews/C10.md
 Note:        Reviewer decisions:
@@ -113,4 +113,5 @@ Note:        Reviewer decisions:
 | 2026-11-02 17:20 | implementer | C09 fix: test_context_cleared_after_request rewritten — request + assert in one coroutine (the old shape passed even with cleanup disabled); mutation self-check done (finally -> pass makes the test fail; restored; suite 45 passed, ruff/mypy clean). Awaiting reviewer. |
 | 2026-11-02 17:50 | reviewer | C09 ACCEPTED after fix round - cleanup test rewritten to one coroutine; mutation re-run by reviewer fails the test as required; 45 passed, ruff/mypy clean; middleware untouched. Awaiting owner sign-off. M0 (Sprint 1) complete after sign-off. |
 | 2026-11-02 18:10 | owner | start C10 models.organization (Sprint 2 / M1). C09 sign-off still pending. |
+| 2026-11-02 19:30 | implementer | C10 GENERATED: Organization model (uuid pk, slug unique index, plan default, tz created_at), migration 0002_organizations (autogen, verified up/down/re-up on real PG16), repositories.create_organization with IntegrityError->AppError 409; 4 PG-backed tests - no skips (unset DATABASE_URL -> all 4 fail); suite 49 passed, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-02 18:15 | reviewer | C10 CONTRACTED - Organization model (uuid pk, slug unique, plan, created_at), migration 0002 proven on real PG16, repositories layer starts (create_organization, 409 on duplicate slug), tests against real PostgreSQL (compose/CI service). Awaiting implementer. |
