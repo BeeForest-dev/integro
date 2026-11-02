@@ -31,11 +31,11 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C08
 Name:        ci.github-actions
-State:       CONTRACTED
+State:       ACCEPTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    implementer
+Awaiting:    owner
 Contract:    see docs/CONTRACTS.md, section C08
 Delivery:    docs/reviews/C08.md
 Note:        Reviewer decisions: workflow .github/workflows/ci.yml; triggers
@@ -48,6 +48,9 @@ Note:        Reviewer decisions: workflow .github/workflows/ci.yml; triggers
              build (all services). Status check works from the first push;
              README badge is deferred to the README (M6) - not part of this
              contract. No secrets, no new dependencies. Stop after C08.
+             ACCEPTED 2026-11-02: run 41442602755 green on 480ab60
+             (API + raw job log: ruff clean, mypy clean, 39 passed,
+             PG16/Redis7 services created). Awaiting owner sign-off.
 ```
 
 ## Log (append only, newest last)
@@ -91,3 +94,5 @@ Note:        Reviewer decisions: workflow .github/workflows/ci.yml; triggers
 | 2026-11-01 10:00 | owner | C07 sign-off -> ACCEPTED in docs/TRACKER.md. M0 remaining: C08, C09. |
 | 2026-11-01 18:30 | owner | GitHub account BeeForest-dev created; repo github.com/BeeForest-dev/integro pushed (17 commits). |
 | 2026-11-02 09:30 | reviewer | C08 ci.github-actions CONTRACTED - workflow ci.yml, checks job (ruff/mypy/pytest + PG16/Redis7 services) + docker compose build job; badge deferred to README (M6). Awaiting implementer. |
+| 2026-11-02 15:20 | reviewer | C08 ACCEPTED - run 41442602755 on 480ab60 verified via API (success) + raw job log: ruff clean, mypy clean (15 files), 39 passed in 4.22s, postgres:16 + redis:7 created, docker compose build success. Awaiting owner sign-off. C09 not started. |
+| 2026-11-02 12:15 | implementer | C08 GENERATED: .github/workflows/ci.yml (checks job with pg16+redis7 service containers, ruff/mypy --warn-unused-ignores/pytest; docker compose build job) — committed 480ab60 and pushed; real CI run #1 conclusion=success, both jobs green in 55 s (run 41442602755). Awaiting reviewer. |
