@@ -34,7 +34,7 @@ Update this file **daily** (5 minutes) — it is the only progress source that c
 
 | ID | Contract | Status | G1 | G2 | G3 | G4 | Notes |
 |---|---|---|---|---|---|---|---|
-| C10 | models.organization | TODO | | | | | |
+| C10 | models.organization | G4 | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C10.md); owner sign-off pending. Real PG16 verified: migration up/down/re-up, 49 passed, 409 mutation-proven; compose postgres now publishes 5432. |
 | C11 | models.user + membership | TODO | | | | | |
 | C12 | repositories.org_scope | TODO | | | | | |
 | C13 | services.auth.password | TODO | | | | | |

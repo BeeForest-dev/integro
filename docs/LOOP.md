@@ -1,4 +1,4 @@
-﻿# LOOP — coordination file
+# LOOP — coordination file
 
 This file is the only shared channel between the agents working on this project.
 
@@ -31,36 +31,24 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C10
 Name:        models.organization
-State:       GENERATED
+State:       ACCEPTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    reviewer
+Awaiting:    owner
 Contract:    see docs/CONTRACTS.md, section C10
 Delivery:    docs/reviews/C10.md
-Note:        Reviewer decisions:
-             - backend/app/models/organization.py: Organization(Base) with
-               id (sa.Uuid, pk, default uuid4), name (str, not null),
-               slug (str, not null, unique, indexed), plan (str,
-               default "free"), created_at (DateTime tz-aware,
-               server_default now()).
-             - backend/app/models/__init__.py imports Organization so
-               Base.metadata sees it; alembic/env.py gains
-               `import app.models  # noqa: F401` so autogenerate works.
-             - Migration 0002_organizations (autogenerate, hand-checked):
-               upgrade head creates the table, downgrade base drops it,
-               re-upgrade idempotent - proven on real PG16.
-             - backend/app/repositories/organizations.py (repositories
-               layer starts here): create_organization(session, name, slug,
-               plan) -> Organization; IntegrityError on the slug unique
-               constraint -> AppError 409 "slug already exists" (C03).
-             - Tests run against a REAL PostgreSQL: DATABASE_URL env
-               (docker compose up -d postgres locally; CI provides the
-               service container). No sqlite stand-in. Tests: migration
-               up/down/re-up creates and drops the table; create persists
-               with uuid id + defaults; duplicate slug -> AppError 409;
-               unique index present. No API endpoints (out of contract).
-             Deps: sqlalchemy, alembic, asyncpg (all present). Stop after C10.
+Note:        Organization model (uuid pk, slug unique index, plan default,
+             tz-aware created_at); migration 0002_organizations; repositories
+             layer starts: create_organization with IntegrityError -> AppError
+             409; 4 PG-backed tests, no skips.
+             ACCEPTED 2026-11-06: verified by reviewer on real PG16 (standalone
+             container): alembic up/down/re-up clean, 49 passed, ruff/mypy
+             clean; mutation (mapping removed) fails the duplicate-slug test
+             as required. Reviewer housekeeping: compose postgres now
+             publishes 5432 so local PG tests run via docker compose up -d
+             postgres (CI unaffected). Awaiting owner sign-off.
+
 ```
 
 ## Log (append only, newest last)
@@ -115,3 +103,4 @@ Note:        Reviewer decisions:
 | 2026-11-02 18:10 | owner | start C10 models.organization (Sprint 2 / M1). C09 sign-off still pending. |
 | 2026-11-02 19:30 | implementer | C10 GENERATED: Organization model (uuid pk, slug unique index, plan default, tz created_at), migration 0002_organizations (autogen, verified up/down/re-up on real PG16), repositories.create_organization with IntegrityError->AppError 409; 4 PG-backed tests - no skips (unset DATABASE_URL -> all 4 fail); suite 49 passed, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-02 18:15 | reviewer | C10 CONTRACTED - Organization model (uuid pk, slug unique, plan, created_at), migration 0002 proven on real PG16, repositories layer starts (create_organization, 409 on duplicate slug), tests against real PostgreSQL (compose/CI service). Awaiting implementer. |
+| 2026-11-06 14:00 | reviewer | C10 ACCEPTED - verified on real PG16 (standalone container): alembic up/down/re-up clean, full suite 49 passed, ruff/mypy clean; mutation (IntegrityError mapping removed) fails the duplicate-slug test. Housekeeping: compose postgres now publishes 5432 for local PG tests. Awaiting owner sign-off. C11 not started. |
