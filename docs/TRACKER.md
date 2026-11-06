@@ -35,7 +35,7 @@ Update this file **daily** (5 minutes) — it is the only progress source that c
 | ID | Contract | Status | G1 | G2 | G3 | G4 | Notes |
 |---|---|---|---|---|---|---|---|
 | C10 | models.organization | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C10.md); owner sign-off 2026-11-06. Real PG16 verified: migration up/down/re-up, 49 passed, 409 mutation-proven; compose postgres now publishes 5432. |
-| C11 | models.user + membership | CHANGES_REQUESTED | ✗ | ✓ | ✓ | ✓ | Missing composite unique (user_id, organization_id) + DB-level role guard; new migration 0004 + 2 tests required. See docs/reviews/C11.md. |
+| C11 | models.user + membership | G4 | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED after one fix round (docs/reviews/C11.md); owner sign-off pending. 57 passed; unique-pair + role CHECK mutation-proven; raw-value guard test. |
 | C12 | repositories.org_scope | TODO | | | | | |
 | C13 | services.auth.password | TODO | | | | | |
 | C14 | services.auth.tokens | TODO | | | | | |

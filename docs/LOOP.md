@@ -31,24 +31,24 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C11
 Name:        models.user + models.membership
-State:       GENERATED
+State:       ACCEPTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    reviewer
+Awaiting:    owner
 Contract:    see docs/CONTRACTS.md, section C11
 Delivery:    docs/reviews/C11.md
-Note:        CHANGES_REQUESTED 2026-11-06: (1) add composite unique
-             memberships(user_id, organization_id) + CHECK on role values via
-             NEW migration 0004 (never edit pushed 0003), mirrored in the
-             model; (2) tests: duplicate pair -> IntegrityError, raw stored
-             role is lowercase (text() select, not enum round-trip),
-             reflection shows the constraints; (3) self-checks: removing
-             CHECK / unique must fail the new tests. Q&A: start-without-
-             CONTRACTED accepted (owner override, one-off); unique belongs to
-             C11 not C12; password_hash deferral to C13 accepted (C13 must
-             add the column via its own migration). Models/tests otherwise
-             pass: 54 green, @validates mutation caught.
+Note:        User (uuid pk, email unique) + Membership (uuid pk, FKs, StrEnum
+             role persisted as lowercase values, @validates -> ValueError).
+             Migrations: 0003_users_memberships, 0004_membership_integrity
+             (composite unique uq_memberships_user_organization + CHECK
+             ck_memberships_role; batch mode keeps C05 SQLite tests green).
+             8 PG-backed tests incl. duplicate-pair IntegrityError and
+             raw-role-is-lowercase (text() select).
+             ACCEPTED 2026-11-06 after one fix round: both required
+             mutations re-run by reviewer as full-loop schema rebuilds fail
+             the new tests as required. 57 passed, ruff/mypy clean. Awaiting
+             owner sign-off.
 ```
 
 ## Log (append only, newest last)
@@ -108,3 +108,4 @@ Note:        CHANGES_REQUESTED 2026-11-06: (1) add composite unique
 | 2026-11-06 22:30 | implementer | C11 GENERATED per owner "делай 11" (no CONTRACTED block yet - same precedent as C02/C05): User + Membership models (StrEnum roles with value-persisting enum + @validates -> ValueError), migration 0003_users_memberships (autogen, up/down/re-up proven on compose PG16); 5 PG-backed tests, no skips - suite 54 passed, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-07 00:10 | implementer | C11 fixes: migration 0004_membership_integrity (batch-mode, composite unique + role CHECK; sqlite C05 tests keep working), model __table_args__ mirrors both, 3 new tests incl. raw-SQL role guard; mutations re-verified (no CHECK -> raw test fails; no unique on fresh base->head schema -> duplicate test fails); suite 57 passed, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-06 23:10 | reviewer | C11 CHANGES_REQUESTED - models/migration/tests solid (54 green, @validates mutation caught) but two integrity gaps verified: no composite unique on memberships(user_id, organization_id) and no DB-level role guard (CHECK missing; values_callable-removal mutation stays green). Required: new migration 0004 (unique pair + CHECK on role) + duplicate-pair IntegrityError test + raw-role-is-lowercase test. Q&A answered in docs/reviews/C11.md.
+| 2026-11-06 23:40 | reviewer | C11 ACCEPTED after fix round - migration 0004 (composite unique + role CHECK, batch mode) with model-mirrored constraints; both mutations re-run by reviewer as full-loop rebuilds fail the new tests; 57 passed, ruff/mypy clean. Awaiting owner sign-off. C12 not started.
