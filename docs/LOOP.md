@@ -29,25 +29,15 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ## Current contract
 
 ```
-ID:          C10
-Name:        models.organization
-State:       ACCEPTED
+ID:          C11
+Name:        models.user + models.membership
+State:       GENERATED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    owner
-Contract:    see docs/CONTRACTS.md, section C10
-Delivery:    docs/reviews/C10.md
-Note:        Organization model (uuid pk, slug unique index, plan default,
-             tz-aware created_at); migration 0002_organizations; repositories
-             layer starts: create_organization with IntegrityError -> AppError
-             409; 4 PG-backed tests, no skips.
-             ACCEPTED 2026-11-06: verified by reviewer on real PG16 (standalone
-             container): alembic up/down/re-up clean, 49 passed, ruff/mypy
-             clean; mutation (mapping removed) fails the duplicate-slug test
-             as required. Reviewer housekeeping: compose postgres now
-             publishes 5432 so local PG tests run via docker compose up -d
-             postgres (CI unaffected). Awaiting owner sign-off.
+Awaiting:    reviewer
+Contract:    see docs/CONTRACTS.md, section C11
+Delivery:    docs/reviews/C11.md
 
 ```
 
@@ -105,3 +95,4 @@ Note:        Organization model (uuid pk, slug unique index, plan default,
 | 2026-11-02 18:15 | reviewer | C10 CONTRACTED - Organization model (uuid pk, slug unique, plan, created_at), migration 0002 proven on real PG16, repositories layer starts (create_organization, 409 on duplicate slug), tests against real PostgreSQL (compose/CI service). Awaiting implementer. |
 | 2026-11-06 14:00 | reviewer | C10 ACCEPTED - verified on real PG16 (standalone container): alembic up/down/re-up clean, full suite 49 passed, ruff/mypy clean; mutation (IntegrityError mapping removed) fails the duplicate-slug test. Housekeeping: compose postgres now publishes 5432 for local PG tests. Awaiting owner sign-off. C11 not started. |
 | 2026-11-06 14:30 | owner | C09 and C10 sign-off -> ACCEPTED in docs/TRACKER.md. Sprint 1 fully signed off; Sprint 2 (M1) in progress with C10. |
+| 2026-11-06 22:30 | implementer | C11 GENERATED per owner "делай 11" (no CONTRACTED block yet - same precedent as C02/C05): User + Membership models (StrEnum roles with value-persisting enum + @validates -> ValueError), migration 0003_users_memberships (autogen, up/down/re-up proven on compose PG16); 5 PG-backed tests, no skips - suite 54 passed, ruff/mypy clean. Awaiting reviewer. |
