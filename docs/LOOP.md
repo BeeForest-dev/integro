@@ -31,11 +31,11 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C12
 Name:        repositories.org_scope
-State:       CHANGES_REQUESTED
+State:       GENERATED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    implementer
+Awaiting:    reviewer
 Contract:    see docs/CONTRACTS.md, section C12
 Delivery:    docs/reviews/C12.md
 Note:        CHANGES_REQUESTED 2026-11-07 (anti-leak keystone, adversarial
@@ -108,4 +108,5 @@ Note:        CHANGES_REQUESTED 2026-11-07 (anti-leak keystone, adversarial
 | 2026-11-06 23:40 | reviewer | C11 ACCEPTED after fix round - migration 0004 (composite unique + role CHECK, batch mode) with model-mirrored constraints; both mutations re-run by reviewer as full-loop rebuilds fail the new tests; 57 passed, ruff/mypy clean. Awaiting owner sign-off. C12 not started.
 | 2026-11-06 23:55 | owner | C11 sign-off -> ACCEPTED in docs/TRACKER.md. Sprint 2 progress: C10, C11 done. |
 | 2026-11-07 12:30 | implementer | C12 GENERATED per owner "давай с12": OrgScope choke point (equality-only scope validation, cross-tenant get -> None, ScopeError as generic 500); 8 PG-backed anti-leak tests incl. mutation-proven rejection tests - suite 65 passed, ruff/mypy clean. Awaiting reviewer. |
+| 2026-11-07 16:00 | implementer | C12 fixes: adversarial hardening (non-Select -> ScopeError, OR-branches banned, single-entity FROM + pin ownership), docstring states the invariant precisely, 4 adversarial tests; mutations verified (no OR check -> OR test fails; no single-FROM -> two-entity test fails) - suite 69 passed, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-07 12:00 | reviewer | C12 CHANGES_REQUESTED - adversarial probes found a real cross-tenant leak (OR-poison accepted, foreign row returned) and AttributeError instead of ScopeError for union/text(); honest-path tests mutation-proven. Three inspector hardenings + tests required. See docs/reviews/C12.md. |

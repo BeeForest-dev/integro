@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 
 import pytest
-from sqlalchemy import delete, select
+from sqlalchemy import delete, or_, select, text
 
 from app.core.errors import AppError
 from app.db.engine import create_engine, create_session_factory
@@ -160,3 +160,67 @@ def test_scope_requires_an_organization():
     """Constructing a scope without an organization fails loudly."""
     with pytest.raises(ScopeError):
         OrgScope(session=None, organization_id=None)  # type: ignore[arg-type]
+
+
+def test_or_poisoned_query_is_rejected(run):
+    """or_(org == A, org == B) must not launder a cross-tenant read through scope A."""
+    async def _scenario(factory):
+        org_a, org_b, _member_a, member_b = await _seed_two_organizations(factory)
+        async with factory() as session:
+            scope = OrgScope(session, org_a)
+            poisoned = select(Membership).where(
+                or_(
+                    Membership.organization_id == org_a,
+                    Membership.organization_id == org_b,
+                )
+            )
+            with pytest.raises(ScopeError):
+                await scope.execute(poisoned)
+            # no foreign row id can be obtained through this scope at all
+            assert await scope.get(Membership, member_b) is None
+
+    run(_scenario)
+
+
+def test_union_is_rejected(run):
+    """CompoundSelect (union) is not a plain SELECT and must raise ScopeError."""
+    async def _scenario(factory):
+        org_a, org_b, *_ = await _seed_two_organizations(factory)
+        async with factory() as session:
+            scope = OrgScope(session, org_a)
+            union_statement = select(Membership).where(
+                Membership.organization_id == org_a
+            ).union(
+                select(Membership).where(Membership.organization_id == org_b)
+            )
+            with pytest.raises(ScopeError):
+                await scope.execute(union_statement)
+
+    run(_scenario)
+
+
+def test_text_clause_is_rejected(run):
+    """Raw text() bypasses inspection entirely and must raise ScopeError."""
+    async def _scenario(factory):
+        org_a, *_ = await _seed_two_organizations(factory)
+        async with factory() as session:
+            scope = OrgScope(session, org_a)
+            with pytest.raises(ScopeError):
+                await scope.execute(text("SELECT * FROM memberships"))
+
+    run(_scenario)
+
+
+def test_two_entity_select_is_rejected(run):
+    """A second selected entity could smuggle unscoped columns; reject it."""
+    async def _scenario(factory):
+        org_a, *_ = await _seed_two_organizations(factory)
+        async with factory() as session:
+            scope = OrgScope(session, org_a)
+            two_entities = select(Membership, User).where(
+                Membership.organization_id == org_a
+            )
+            with pytest.raises(ScopeError):
+                await scope.execute(two_entities)
+
+    run(_scenario)

@@ -3,16 +3,19 @@
 Every read query in the application must pass through :class:`OrgScope`.
 The scope carries the organization id established by the authentication
 layer; callers of repository methods never supply an org id themselves.
-A query that does not pin ``organization_id`` to exactly this scope is
-rejected with :class:`ScopeError` instead of being executed — an unscoped
-query can never return cross-tenant rows because it never runs.
 
-Scope matching is deliberately strict and simple: a statement must contain
-an equality ``organization_id = <this scope's org id>``. Anything else —
-no filter, a different org id, an ``IN`` list, a model without the column —
-is rejected. That is the trade-off: false rejections of exotic-but-honest
-queries are visible (ScopeError) and fixable, while a false acceptance
-would be silent and fatal.
+Enforced invariant: a statement executed through the scope must be a plain
+SELECT that selects from exactly one entity, contains no ``OR`` conditions,
+and pins that entity's ``organization_id`` to exactly this scope. Anything
+else — no filter, a different org id, an ``OR`` branch, a ``UNION``, a raw
+``text()`` clause, a second selected entity — is rejected with
+:class:`ScopeError` before the statement reaches the database.
+
+These restrictions are deliberate: false rejections of exotic-but-honest
+queries are visible (ScopeError) and fixable by splitting the query, while
+a false acceptance in an anti-leak mechanism is silent and fatal. An
+``OR`` of two org pins in particular would launder a cross-tenant read
+through the scope's own filter, so it is banned outright.
 """
 
 import uuid
@@ -22,7 +25,7 @@ from sqlalchemy import Column, Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.sql import operators, visitors
-from sqlalchemy.sql.elements import BinaryExpression, BindParameter
+from sqlalchemy.sql.elements import BinaryExpression, BindParameter, BooleanClauseList
 
 from app.core.errors import AppError
 
@@ -39,32 +42,40 @@ class ScopeError(AppError):
     title = "Scope Error"
 
 
-def _pins_organization_id(statement: Select, organization_id: uuid.UUID) -> bool:
-    """True when the WHERE clause pins organization_id to exactly organization_id.
+def _pinned_org_column(statement: Select, organization_id: uuid.UUID) -> Column | None:
+    """Return the organization_id column pinned to this scope, or None.
 
-    Only plain equality is accepted, in either operand order. Anything more
-    exotic (IN lists, OR-ed branches) is rejected on purpose.
+    Only plain equality is accepted, in either operand order; IN lists and
+    OR-ed branches never reach this function (rejected earlier).
     """
     whereclause = statement.whereclause
     if whereclause is None:
-        return False
-    pinned = False
+        return None
     for element in visitors.iterate(whereclause):
-        if pinned or not isinstance(element, BinaryExpression):
+        if not isinstance(element, BinaryExpression) or element.operator is not operators.eq:
             continue
-        if element.operator is not operators.eq:
-            continue
-        left, right = element.left, element.right
-        for column, value in ((left, right), (right, left)):
+        for column, value in ((element.left, element.right), (element.right, element.left)):
             if (
                 isinstance(column, Column)
                 and column.name == "organization_id"
                 and isinstance(value, BindParameter)
                 and value.value == organization_id
             ):
-                pinned = True
-                break
-    return pinned
+                return column
+    return None
+
+
+def _contains_or(whereclause: Any) -> bool:
+    """True when the WHERE clause contains an OR branch anywhere."""
+    if whereclause is None:
+        return False
+    for element in visitors.iterate(whereclause):
+        if (
+            isinstance(element, BooleanClauseList)
+            and element.operator is operators.or_
+        ):
+            return True
+    return False
 
 
 class OrgScope:
@@ -121,16 +132,31 @@ class OrgScope:
     async def execute(self, statement: Select) -> Any:
         """Run a SELECT after proving it is scoped to this organization.
 
-        This is the choke point: any statement that does not pin
-        ``organization_id`` to exactly this scope is rejected before it
-        reaches the database.
+        This is the choke point. The enforced invariant (see the module
+        docstring) is checked before the statement reaches the database;
+        any violation raises ScopeError instead of executing.
 
         Raises:
-            ScopeError: If the statement is not scoped to this organization.
+            ScopeError: If the statement is not a single-entity SELECT
+                without OR branches, pinned to this organization.
         """
-        if not _pins_organization_id(statement, self.organization_id):
-            raise ScopeError("query attempted without organization scope")
+        self._assert_scoped(statement)
         return await self._session.execute(statement)
+
+    def _assert_scoped(self, statement: Any) -> None:
+        """Enforce the module invariant, raising ScopeError on any violation."""
+        if not isinstance(statement, Select):
+            raise ScopeError("only plain SELECT statements pass through the organization scope")
+        if _contains_or(statement.whereclause):
+            raise ScopeError("OR conditions are not allowed in a scoped query")
+        froms = statement.get_final_froms()
+        if len(froms) != 1:
+            raise ScopeError("a scoped query must select from exactly one entity")
+        pinned = _pinned_org_column(statement, self.organization_id)
+        if pinned is None:
+            raise ScopeError("query attempted without organization scope")
+        if pinned.table is not froms[0]:
+            raise ScopeError("organization scope must pin the selected entity")
 
     @staticmethod
     def _org_column(model: type[_Model]) -> Column:
