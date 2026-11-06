@@ -12,7 +12,8 @@ from pathlib import Path
 import pytest
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import delete, inspect, select
+from sqlalchemy import delete, inspect, select, text
+from sqlalchemy.exc import IntegrityError
 
 from app.db.engine import create_engine, create_session_factory
 from app.models import Membership, MembershipRole, Organization, User
@@ -173,3 +174,106 @@ def test_ids_are_uuid_and_created_at_set(run):
             assert user.created_at is not None
 
     run(_scenario)
+
+
+def test_duplicate_membership_pair_raises_integrity_error(run):
+    """Two memberships for the same (user, organization) pair are rejected."""
+    async def _scenario(factory):
+        async with factory() as session:
+            user = User(email="duo@example.com")
+            organization = Organization(name="Duo", slug="duo-org")
+            session.add_all([user, organization])
+            await session.flush()
+            session.add(
+                Membership(
+                    user_id=user.id,
+                    organization_id=organization.id,
+                    role=MembershipRole.OWNER,
+                )
+            )
+            await session.flush()
+            session.add(
+                Membership(
+                    user_id=user.id,
+                    organization_id=organization.id,
+                    role=MembershipRole.VIEWER,
+                )
+            )
+            with pytest.raises(IntegrityError):
+                await session.flush()
+
+    run(_scenario)
+
+
+def test_raw_stored_role_is_lowercase(run):
+    """The database itself guards the value space: member NAMES are rejected,
+    and a proper value reads back lowercase via raw SQL (no ORM coercion)."""
+    async def _scenario(factory):
+        async with factory() as session:
+            user = User(email="raw@example.com")
+            organization = Organization(name="Raw", slug="raw-org")
+            session.add_all([user, organization])
+            await session.flush()
+            await session.commit()
+            # Capture ids now: the rollback below expires all instances.
+            user_id = user.id
+            organization_id = organization.id
+
+            with pytest.raises(IntegrityError):
+                await session.execute(
+                    text(
+                        "INSERT INTO memberships (id, user_id, organization_id, role) "
+                        "VALUES (:id, :user_id, :organization_id, 'ADMIN')"
+                    ),
+                    {
+                        "id": str(uuid.uuid4()),
+                        "user_id": str(user_id),
+                        "organization_id": str(organization_id),
+                    },
+                )
+            await session.rollback()
+
+            membership = Membership(
+                user_id=user_id,
+                organization_id=organization_id,
+                role=MembershipRole.ADMIN,
+            )
+            session.add(membership)
+            await session.commit()
+
+            raw = await session.execute(
+                text("SELECT role FROM memberships WHERE id = :id"),
+                {"id": membership.id},
+            )
+            assert raw.scalar_one() == "admin"
+
+    run(_scenario)
+
+
+def test_integrity_constraints_present():
+    """Reflection proves both constraints exist: composite unique + role CHECK."""
+    async def _scenario():
+        engine = create_engine(_database_url())
+        try:
+            async with engine.connect() as connection:
+                def _reflect(conn):
+                    inspector = inspect(conn)
+                    return (
+                        inspector.get_unique_constraints("memberships"),
+                        inspector.get_check_constraints("memberships"),
+                    )
+
+                unique_constraints, check_constraints = await connection.run_sync(_reflect)
+        finally:
+            await engine.dispose()
+
+        assert any(
+            set(constraint["column_names"]) == {"user_id", "organization_id"}
+            for constraint in unique_constraints
+        ), "composite unique on (user_id, organization_id) is missing"
+        assert any(
+            "'owner'" in constraint["sqltext"] and "'viewer'" in constraint["sqltext"]
+            for constraint in check_constraints
+        ), "CHECK constraint on role is missing"
+
+    asyncio.run(_scenario())

@@ -4,7 +4,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Uuid, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, UniqueConstraint, Uuid, func
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, validates
 
@@ -33,6 +33,15 @@ class Membership(Base):
 
     __tablename__ = "memberships"
 
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id", "organization_id", name="uq_memberships_user_organization"
+        ),
+        CheckConstraint(
+            "role IN ('owner', 'admin', 'member', 'viewer')", name="ck_memberships_role"
+        ),
+    )
+
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
     organization_id: Mapped[uuid.UUID] = mapped_column(
@@ -43,6 +52,9 @@ class Membership(Base):
             MembershipRole,
             native_enum=False,
             validate_strings=True,
+            # The database CHECK (see __table_args__) is the constraint of
+            # record; the enum type must not create a second one.
+            create_constraint=False,
             # Persist the lowercase values ("owner"), not the member names.
             values_callable=lambda role_enum: [member.value for member in role_enum],
         ),
