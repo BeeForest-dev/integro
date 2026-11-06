@@ -36,7 +36,7 @@ Update this file **daily** (5 minutes) — it is the only progress source that c
 |---|---|---|---|---|---|---|---|
 | C10 | models.organization | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C10.md); owner sign-off 2026-11-06. Real PG16 verified: migration up/down/re-up, 49 passed, 409 mutation-proven; compose postgres now publishes 5432. |
 | C11 | models.user + membership | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C11.md); owner sign-off 2026-11-06. 57 passed; unique-pair + role CHECK mutation-proven; raw-value guard test. |
-| C12 | repositories.org_scope | CHANGES_REQUESTED | ✗ | ✓ | ✓ | ✓ | Anti-leak keystone: OR-poison leaks a foreign row (reviewer-verified); union/text raise AttributeError not ScopeError; 3 inspector hardenings + tests required. See docs/reviews/C12.md. |
+| C12 | repositories.org_scope | G4 | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED after one fix round (docs/reviews/C12.md); owner sign-off pending. 69 passed; OR/union/text/two-entity rejections mutation-proven. |
 | C13 | services.auth.password | TODO | | | | | |
 | C14 | services.auth.tokens | TODO | | | | | |
 | C15 | api.auth | TODO | | | | | |

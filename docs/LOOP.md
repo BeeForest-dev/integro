@@ -31,22 +31,23 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C12
 Name:        repositories.org_scope
-State:       GENERATED
+State:       ACCEPTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    reviewer
+Awaiting:    owner
 Contract:    see docs/CONTRACTS.md, section C12
 Delivery:    docs/reviews/C12.md
-Note:        CHANGES_REQUESTED 2026-11-07 (anti-leak keystone, adversarial
-             review): (1) reject or_ anywhere in the WHERE clause;
-             (2) execute() must isinstance-check Select -> ScopeError for
-             text()/union() (today: AttributeError); (3) require single FROM
-             entity + pin belongs to it (join-poison future-proof);
-             (4) docstring states the enforced invariant precisely;
-             (5) tests: OR/union/text/two-entity rejections + self-checks.
-             Reviewer-verified: OR-poison leaks a foreign row today;
-             honest-path tests are mutation-proven. See docs/reviews/C12.md.
+Note:        Anti-leak choke point. OrgScope(session, organization_id) with
+             query()/get()/first()/all()/execute(); _assert_scoped enforces:
+             plain Select only (no text/union), no OR branches anywhere in
+             the WHERE tree, exactly one FROM entity, pinned
+             organization_id == scope org on that entity. Violations ->
+             ScopeError (500 via C03) before the statement reaches the DB.
+             ACCEPTED 2026-11-07 after one fix round: all four reviewer
+             adversarial probes (OR-poison, union, text(), !=) rejected;
+             mutations on OR/single-FROM checks fail the new tests as
+             required. 69 passed, ruff/mypy clean. Awaiting owner sign-off.
 ```
 ## Log (append only, newest last)
 
@@ -110,3 +111,4 @@ Note:        CHANGES_REQUESTED 2026-11-07 (anti-leak keystone, adversarial
 | 2026-11-07 12:30 | implementer | C12 GENERATED per owner "давай с12": OrgScope choke point (equality-only scope validation, cross-tenant get -> None, ScopeError as generic 500); 8 PG-backed anti-leak tests incl. mutation-proven rejection tests - suite 65 passed, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-07 16:00 | implementer | C12 fixes: adversarial hardening (non-Select -> ScopeError, OR-branches banned, single-entity FROM + pin ownership), docstring states the invariant precisely, 4 adversarial tests; mutations verified (no OR check -> OR test fails; no single-FROM -> two-entity test fails) - suite 69 passed, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-07 12:00 | reviewer | C12 CHANGES_REQUESTED - adversarial probes found a real cross-tenant leak (OR-poison accepted, foreign row returned) and AttributeError instead of ScopeError for union/text(); honest-path tests mutation-proven. Three inspector hardenings + tests required. See docs/reviews/C12.md. |
+| 2026-11-07 12:40 | reviewer | C12 ACCEPTED after fix round - _assert_scoped enforces Select-only/no-OR/single-FROM/pin-belongs-to-entity; all four adversarial probes re-run by reviewer now reject with ScopeError; mutations on OR and single-FROM checks fail the new tests. 69 passed, ruff/mypy clean. Awaiting owner sign-off. C13 not started. |
