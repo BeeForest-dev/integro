@@ -29,21 +29,15 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ## Current contract
 
 ```
-ID:          C12
-Name:        repositories.org_scope
-State:       ACCEPTED
+ID:          C13
+Name:        services.auth.password
+State:       GENERATED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    owner
-Contract:    see docs/CONTRACTS.md, section C12
-Delivery:    docs/reviews/C12.md
-Note:        Anti-leak choke point. OrgScope(session, organization_id) with
-             query()/get()/first()/all()/execute(); _assert_scoped enforces:
-             plain Select only (no text/union), no OR branches anywhere in
-             the WHERE tree, exactly one FROM entity, pinned
-             organization_id == scope org on that entity. Violations ->
-             ScopeError (500 via C03) before the statement reaches the DB.
+Awaiting:    reviewer
+Contract:    see docs/CONTRACTS.md, section C13
+Delivery:    docs/reviews/C13.md
              ACCEPTED 2026-11-07 after one fix round: all four reviewer
              adversarial probes (OR-poison, union, text(), !=) rejected;
              mutations on OR/single-FROM checks fail the new tests as
@@ -113,3 +107,4 @@ Note:        Anti-leak choke point. OrgScope(session, organization_id) with
 | 2026-11-07 12:00 | reviewer | C12 CHANGES_REQUESTED - adversarial probes found a real cross-tenant leak (OR-poison accepted, foreign row returned) and AttributeError instead of ScopeError for union/text(); honest-path tests mutation-proven. Three inspector hardenings + tests required. See docs/reviews/C12.md. |
 | 2026-11-07 12:40 | reviewer | C12 ACCEPTED after fix round - _assert_scoped enforces Select-only/no-OR/single-FROM/pin-belongs-to-entity; all four adversarial probes re-run by reviewer now reject with ScopeError; mutations on OR and single-FROM checks fail the new tests. 69 passed, ruff/mypy clean. Awaiting owner sign-off. C13 not started. |
 | 2026-11-07 13:00 | owner | C12 sign-off -> ACCEPTED in docs/TRACKER.md. Anti-leak keystone signed off; Sprint 2 progress: C10, C11, C12 done. |
+| 2026-11-07 18:30 | implementer | C13 GENERATED per owner "с13 продолжай": hash_password/verify_password (argon2id; malformed hash -> False; empty -> ValueError) + C11 standing requirement delivered (users.password_hash via migration 0005); 9 new tests, InvalidHash-mutation proven - suite 78 passed, ruff/mypy clean. Awaiting reviewer. |
