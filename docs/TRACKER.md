@@ -19,7 +19,7 @@ Update this file **daily** (5 minutes) — it is the only progress source that c
 | C06 | api.health | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C06.md); owner sign-off 2026-10-31. 37 passed; live stand: /ready 200, redis down -> 503 failed=["redis"], both down -> failed=["db","redis"], /health stays 200. Mutation check proves the Redis test guards the real PING path. |
 | C07 | infra.docker | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED after one fix round (docs/reviews/C07.md); owner sign-off 2026-11-01. 39 passed, ruff/mypy clean; fail-fast on missing REDIS_URL; mutation check on the `include=` registry guard; live stand 7/7 healthy in 21.2 s, e2e ping -> pong, uid 1000, down -v clean. |
 | C08 | ci.github-actions | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C08.md); owner sign-off 2026-11-02. CI run green: ruff/mypy clean, 39 passed, PG16+Redis7 services, docker compose build OK. |
-| C09 | api.request_context | G4 | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED after one fix round (docs/reviews/C09.md); owner sign-off pending. 45 passed, ruff/mypy clean; context-cleanup test mutation-proven. |
+| C09 | api.request_context | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C09.md); owner sign-off 2026-11-06. 45 passed; context-cleanup test mutation-proven. |
 
 **Sprint 1 exit criterion**
 - [ ] `docker compose up` -> api, worker, beat, postgres, redis, mock-crm, mailpit healthy in 60 s
@@ -34,7 +34,7 @@ Update this file **daily** (5 minutes) — it is the only progress source that c
 
 | ID | Contract | Status | G1 | G2 | G3 | G4 | Notes |
 |---|---|---|---|---|---|---|---|
-| C10 | models.organization | G4 | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C10.md); owner sign-off pending. Real PG16 verified: migration up/down/re-up, 49 passed, 409 mutation-proven; compose postgres now publishes 5432. |
+| C10 | models.organization | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C10.md); owner sign-off 2026-11-06. Real PG16 verified: migration up/down/re-up, 49 passed, 409 mutation-proven; compose postgres now publishes 5432. |
 | C11 | models.user + membership | TODO | | | | | |
 | C12 | repositories.org_scope | TODO | | | | | |
 | C13 | services.auth.password | TODO | | | | | |
