@@ -31,15 +31,23 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C12
 Name:        repositories.org_scope
-State:       GENERATED
+State:       CHANGES_REQUESTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    reviewer
+Awaiting:    implementer
 Contract:    see docs/CONTRACTS.md, section C12
 Delivery:    docs/reviews/C12.md
+Note:        CHANGES_REQUESTED 2026-11-07 (anti-leak keystone, adversarial
+             review): (1) reject or_ anywhere in the WHERE clause;
+             (2) execute() must isinstance-check Select -> ScopeError for
+             text()/union() (today: AttributeError); (3) require single FROM
+             entity + pin belongs to it (join-poison future-proof);
+             (4) docstring states the enforced invariant precisely;
+             (5) tests: OR/union/text/two-entity rejections + self-checks.
+             Reviewer-verified: OR-poison leaks a foreign row today;
+             honest-path tests are mutation-proven. See docs/reviews/C12.md.
 ```
-
 ## Log (append only, newest last)
 
 | When | Who | Event |
@@ -100,3 +108,4 @@ Delivery:    docs/reviews/C12.md
 | 2026-11-06 23:40 | reviewer | C11 ACCEPTED after fix round - migration 0004 (composite unique + role CHECK, batch mode) with model-mirrored constraints; both mutations re-run by reviewer as full-loop rebuilds fail the new tests; 57 passed, ruff/mypy clean. Awaiting owner sign-off. C12 not started.
 | 2026-11-06 23:55 | owner | C11 sign-off -> ACCEPTED in docs/TRACKER.md. Sprint 2 progress: C10, C11 done. |
 | 2026-11-07 12:30 | implementer | C12 GENERATED per owner "давай с12": OrgScope choke point (equality-only scope validation, cross-tenant get -> None, ScopeError as generic 500); 8 PG-backed anti-leak tests incl. mutation-proven rejection tests - suite 65 passed, ruff/mypy clean. Awaiting reviewer. |
+| 2026-11-07 12:00 | reviewer | C12 CHANGES_REQUESTED - adversarial probes found a real cross-tenant leak (OR-poison accepted, foreign row returned) and AttributeError instead of ScopeError for union/text(); honest-path tests mutation-proven. Three inspector hardenings + tests required. See docs/reviews/C12.md. |
