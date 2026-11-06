@@ -31,14 +31,24 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C11
 Name:        models.user + models.membership
-State:       GENERATED
+State:       CHANGES_REQUESTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    reviewer
+Awaiting:    implementer
 Contract:    see docs/CONTRACTS.md, section C11
 Delivery:    docs/reviews/C11.md
-
+Note:        CHANGES_REQUESTED 2026-11-06: (1) add composite unique
+             memberships(user_id, organization_id) + CHECK on role values via
+             NEW migration 0004 (never edit pushed 0003), mirrored in the
+             model; (2) tests: duplicate pair -> IntegrityError, raw stored
+             role is lowercase (text() select, not enum round-trip),
+             reflection shows the constraints; (3) self-checks: removing
+             CHECK / unique must fail the new tests. Q&A: start-without-
+             CONTRACTED accepted (owner override, one-off); unique belongs to
+             C11 not C12; password_hash deferral to C13 accepted (C13 must
+             add the column via its own migration). Models/tests otherwise
+             pass: 54 green, @validates mutation caught.
 ```
 
 ## Log (append only, newest last)
@@ -96,3 +106,4 @@ Delivery:    docs/reviews/C11.md
 | 2026-11-06 14:00 | reviewer | C10 ACCEPTED - verified on real PG16 (standalone container): alembic up/down/re-up clean, full suite 49 passed, ruff/mypy clean; mutation (IntegrityError mapping removed) fails the duplicate-slug test. Housekeeping: compose postgres now publishes 5432 for local PG tests. Awaiting owner sign-off. C11 not started. |
 | 2026-11-06 14:30 | owner | C09 and C10 sign-off -> ACCEPTED in docs/TRACKER.md. Sprint 1 fully signed off; Sprint 2 (M1) in progress with C10. |
 | 2026-11-06 22:30 | implementer | C11 GENERATED per owner "делай 11" (no CONTRACTED block yet - same precedent as C02/C05): User + Membership models (StrEnum roles with value-persisting enum + @validates -> ValueError), migration 0003_users_memberships (autogen, up/down/re-up proven on compose PG16); 5 PG-backed tests, no skips - suite 54 passed, ruff/mypy clean. Awaiting reviewer. |
+| 2026-11-06 23:10 | reviewer | C11 CHANGES_REQUESTED - models/migration/tests solid (54 green, @validates mutation caught) but two integrity gaps verified: no composite unique on memberships(user_id, organization_id) and no DB-level role guard (CHECK missing; values_callable-removal mutation stays green). Required: new migration 0004 (unique pair + CHECK on role) + duplicate-pair IntegrityError test + raw-role-is-lowercase test. Q&A answered in docs/reviews/C11.md.
