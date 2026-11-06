@@ -29,26 +29,15 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ## Current contract
 
 ```
-ID:          C11
-Name:        models.user + models.membership
-State:       ACCEPTED
+ID:          C12
+Name:        repositories.org_scope
+State:       GENERATED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    owner
-Contract:    see docs/CONTRACTS.md, section C11
-Delivery:    docs/reviews/C11.md
-Note:        User (uuid pk, email unique) + Membership (uuid pk, FKs, StrEnum
-             role persisted as lowercase values, @validates -> ValueError).
-             Migrations: 0003_users_memberships, 0004_membership_integrity
-             (composite unique uq_memberships_user_organization + CHECK
-             ck_memberships_role; batch mode keeps C05 SQLite tests green).
-             8 PG-backed tests incl. duplicate-pair IntegrityError and
-             raw-role-is-lowercase (text() select).
-             ACCEPTED 2026-11-06 after one fix round: both required
-             mutations re-run by reviewer as full-loop schema rebuilds fail
-             the new tests as required. 57 passed, ruff/mypy clean. Awaiting
-             owner sign-off.
+Awaiting:    reviewer
+Contract:    see docs/CONTRACTS.md, section C12
+Delivery:    docs/reviews/C12.md
 ```
 
 ## Log (append only, newest last)
@@ -110,3 +99,4 @@ Note:        User (uuid pk, email unique) + Membership (uuid pk, FKs, StrEnum
 | 2026-11-06 23:10 | reviewer | C11 CHANGES_REQUESTED - models/migration/tests solid (54 green, @validates mutation caught) but two integrity gaps verified: no composite unique on memberships(user_id, organization_id) and no DB-level role guard (CHECK missing; values_callable-removal mutation stays green). Required: new migration 0004 (unique pair + CHECK on role) + duplicate-pair IntegrityError test + raw-role-is-lowercase test. Q&A answered in docs/reviews/C11.md.
 | 2026-11-06 23:40 | reviewer | C11 ACCEPTED after fix round - migration 0004 (composite unique + role CHECK, batch mode) with model-mirrored constraints; both mutations re-run by reviewer as full-loop rebuilds fail the new tests; 57 passed, ruff/mypy clean. Awaiting owner sign-off. C12 not started.
 | 2026-11-06 23:55 | owner | C11 sign-off -> ACCEPTED in docs/TRACKER.md. Sprint 2 progress: C10, C11 done. |
+| 2026-11-07 12:30 | implementer | C12 GENERATED per owner "давай с12": OrgScope choke point (equality-only scope validation, cross-tenant get -> None, ScopeError as generic 500); 8 PG-backed anti-leak tests incl. mutation-proven rejection tests - suite 65 passed, ruff/mypy clean. Awaiting reviewer. |
