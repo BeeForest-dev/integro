@@ -31,50 +31,20 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C21
 Name:        services.conditions
-State:       GENERATED
+State:       ACCEPTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    reviewer
+Awaiting:    owner
 Contract:    see docs/CONTRACTS.md, section C21
 Delivery:    docs/reviews/C21.md
-Note:        Reviewer decisions:
-             - backend/app/services/conditions.py, stdlib only.
-             - Tree shape: {"all": [node, ...]} / {"any": [node, ...]}
-               (nestable); leaf clause {"field": "a.b.c", "op": name,
-               "value": comparable}. Field paths are dot-lookups into the
-               payload dict.
-             - Explicit operator registry (dict name -> predicate), NO eval:
-               eq, ne, gt, gte, lt, lte (numeric; type mismatch -> False,
-               never an exception), contains (substring / list membership),
-               exists (value ignored). Unknown operator at runtime -> clause
-               False + recorded path (defense in depth), never a raise.
-             - validate_conditions(tree): raise ConditionValidationError
-               (ValueError subclass) with the JSON path of the first
-               problem ("all[0].op: unknown operator 'regex' (supported:
-               ...)") for: unknown operator, missing field/op keys,
-               non-dict clause, non-dict tree. Empty all -> True, empty any
-               -> False (documented vacuous truth).
-             - evaluate(tree, payload) -> EvaluationResult(matched: bool,
-               failed_paths: list[str]); entries rendered "all[0]: amount gt
-               100" for the UI. Missing payload field -> clause False, path
-               recorded, no exception.
-             - Save-time wiring (part of this contract): FlowDefinition (C20
-               schema file) gains optional conditions: dict | None with a
-               field validator delegating to validate_conditions (errors
-               re-raised as ValueError so the C20 422-path machinery works
-               unchanged). This is the ONE allowed touch of the accepted C20
-               schema file.
-             - Tests (no PG needed): operator truth tables incl. boundaries;
-               nested paths; missing field -> False + path, no raise;
-               all/any nesting; type mismatch on gt -> False; validate:
-               unknown op (lists supported, has path), malformed clause,
-               non-dict tree; runtime unknown op -> False, no raise;
-               "eval(" absent from the module source; integration: create
-               flow with bad conditions -> 422 via the C20 repository.
-               Self-checks: drop an operator from the registry -> its truth
-               table fails; make missing-field raise -> the missing-field
-               test fails. Stop after C21.
+Note:        Condition trees (all/any + operator registry, no eval);
+             validate_conditions at save time (wired into the C20 schema);
+             evaluate never raises; _MISSING sentinel keeps None-vs-absent
+             exact; definitions stored without nulls.
+             ACCEPTED 2026-11-08: 169 passed; reviewer probes (truth tables,
+             injection-shaped field names inert, runtime garbage safe, save
+             422 through C20); both mutations caught. Awaiting owner sign-off.
 ```
 ## Log (append only, newest last)
 
@@ -179,3 +149,4 @@ Note:        Reviewer decisions:
 | 2026-11-08 03:40 | reviewer | C20 ACCEPTED - versioned flows verified: exact 422 paths (trigger / trigger.type / actions.0.type with supported lists), tenant isolation on flow + version history, monotonic versioning; mutations on validation bypass and unique(flow_id, version) via full schema rebuild caught; 140 passed, ruff/mypy clean. Awaiting owner sign-off. C21 not started. |
 | 2026-11-08 04:00 | owner | C20 sign-off -> ACCEPTED in docs/TRACKER.md. |
 | 2026-11-08 04:05 | reviewer | C21 services.conditions CONTRACTED per workflow rule: stdlib-only condition tree (all/any + operator registry, no eval), validate at save time wired into the C20 FlowDefinition as the one allowed touch, runtime never raises. Awaiting implementer. |
+| 2026-11-08 04:40 | reviewer | C21 ACCEPTED - conditions engine verified: 20+ reviewer probes (truth tables, None-vs-absent, injection-shaped field names inert, runtime never raises, save-time 422 through C20); mutations on operator registry and missing-field handling caught; 169 passed, ruff/mypy clean. Awaiting owner sign-off. C22 not started. |
