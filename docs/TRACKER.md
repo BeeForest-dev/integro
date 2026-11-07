@@ -41,7 +41,7 @@ Update this file **daily** (5 minutes) — it is the only progress source that c
 | C14 | services.auth.tokens | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C14.md); owner sign-off 2026-11-07. 90 passed; unicode segments -> TokenInvalid, mutation-proven; typ/exp mutations caught. |
 | C15 | api.auth | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C15.md); owner sign-off 2026-11-07. 103 passed; refresh membership check revocation-probe + mutation-proven; audit skeleton; httpOnly rotation. |
 | C16 | api.rbac | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C16.md); owner sign-off 2026-11-07. 109 passed; cross-org role resolution probe; both mutations caught; C15 untouched. |
-| C17 | core.crypto | TODO | | | | | |
+| C17 | core.crypto | G4 | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C17.md); owner sign-off pending. 119 passed; fail-closed probes (wrong/empty key, tampering, truncation, garbage); both mutations caught. |
 | C18 | models.connections | TODO | | | | | |
 | C19 | services.audit | TODO | | | | | |
 

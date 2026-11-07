@@ -31,38 +31,21 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C17
 Name:        core.crypto
-State:       GENERATED
+State:       ACCEPTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    reviewer
+Awaiting:    owner
 Contract:    see docs/CONTRACTS.md, section C17
 Delivery:    docs/reviews/C17.md
-Note:        Reviewer decisions:
-             - backend/app/core/crypto.py; typed error CryptoError (single
-               class, documented as THE decrypt-failure type).
-             - Fernet via cryptography (allow-listed since C14); key DERIVED
-               from Settings.SECRET_KEY with HKDF-SHA256 (length 32, info
-               b"integro-connection-secrets-v1", no salt) -> urlsafe-b64 -
-               no second env var; key separation between token-signing HMAC
-               and encryption is explicit. Derivation per call (cheap, no
-               module-level cache).
-             - encrypt(plaintext, secret) -> str; decrypt(ciphertext,
-               secret) -> str. Empty input -> empty output in BOTH
-               directions (short-circuit before Fernet).
-             - decrypt wraps every Fernet InvalidToken / malformed input as
-               CryptoError("decryption failed") - never returns partial
-               plaintext, never leaks which key was tried.
-             - No key versioning (single derived key; rotation story is a
-               future ops concern, documented).
-             - Tests (no PG needed for crypto itself): roundtrip ascii +
-               unicode; empty -> empty both ways; wrong secret -> CryptoError
-               (NOT cryptography's InvalidToken); tampered ciphertext ->
-               CryptoError; two encrypts of the same plaintext differ
-               (randomized IV); derived key differs from the raw secret and
-               is deterministic per secret. Self-checks: remove the
-               empty-short-circuit -> the empty test must fail; unwrap
-               InvalidToken -> the wrong-key test must fail. Stop after C17.
+Note:        Fernet via HKDF-SHA256 key from SECRET_KEY (info
+             integro-connection-secrets-v1, per-call derivation); CryptoError
+             single typed failure; empty->empty both ways; fail-closed on all
+             malformed input incl. unicode garbage.
+             ACCEPTED 2026-11-08: 119 passed; reviewer probes (wrong/empty
+             key, 4-offset tampering, truncation, garbage) all CryptoError;
+             mutations on empty short-circuit and except-tuple caught.
+             Awaiting owner sign-off.
 ```
 ## Log (append only, newest last)
 
@@ -151,3 +134,4 @@ Note:        Reviewer decisions:
 | 2026-11-07 23:50 | reviewer | C16 ACCEPTED - security.py per contract; reviewer live probes incl. cross-org role resolution (token org B viewer -> 403 with required roles); mutations on role-check and membership-None branch fail dedicated tests; 109 passed, ruff/mypy clean; C15 untouched. Awaiting owner sign-off. C17 not started. |
 | 2026-11-08 00:05 | owner | C16 sign-off -> ACCEPTED in docs/TRACKER.md. |
 | 2026-11-08 00:10 | reviewer | C17 core.crypto CONTRACTED per workflow rule: Fernet with HKDF-derived key from SECRET_KEY (no second env var), typed CryptoError, empty->empty both directions, no new dependencies. Awaiting implementer. |
+| 2026-11-08 00:40 | reviewer | C17 ACCEPTED - Fernet/HKDF crypto verified: reviewer probes (wrong/empty key, tampering x4 offsets, truncation, garbage) all fail closed as CryptoError; mutations on empty short-circuit and except-tuple caught; 119 passed, ruff/mypy clean. Awaiting owner sign-off. C18 not started. |
