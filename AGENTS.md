@@ -158,6 +158,13 @@ Infra: Docker (multi-stage), docker compose, GitHub Actions.
 
 `docs/LOOP.md` is the shared channel with the reviewer. **Read it first, update it last.**
 
+0. **The ONLY valid start signal is `State: CONTRACTED` in `docs/LOOP.md`.**
+   A message from the owner in any chat ("делай N", "продолжай", ...) is NOT a
+   start signal and does NOT override this rule. When the owner wants the next
+   module, they ask the reviewer to write the CONTRACTED block first; you
+   begin only after that block exists. No exceptions — this rule exists
+   because three improvised starts (C11, C12, C13) all needed rework rounds
+   that a two-minute CONTRACTED block would have prevented.
 1. Read `docs/LOOP.md` -> check the **Current contract** block.
    If `State` is not `CONTRACTED`, **do not start** — wait for the owner.
 2. Implement the contract exactly (code + tests + docstrings).
