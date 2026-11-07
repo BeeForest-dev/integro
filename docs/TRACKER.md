@@ -37,7 +37,7 @@ Update this file **daily** (5 minutes) — it is the only progress source that c
 | C10 | models.organization | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C10.md); owner sign-off 2026-11-06. Real PG16 verified: migration up/down/re-up, 49 passed, 409 mutation-proven; compose postgres now publishes 5432. |
 | C11 | models.user + membership | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C11.md); owner sign-off 2026-11-06. 57 passed; unique-pair + role CHECK mutation-proven; raw-value guard test. |
 | C12 | repositories.org_scope | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C12.md); owner sign-off 2026-11-07. 69 passed; OR/union/text/two-entity rejections mutation-proven. |
-| C13 | services.auth.password | G4 | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C13.md); owner sign-off pending. 78 passed; both except-tuple elements mutation-proven; password_hash migration 0005 closes the C11 requirement. |
+| C13 | services.auth.password | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C13.md); owner sign-off 2026-11-07. 78 passed; both except-tuple elements mutation-proven; password_hash migration 0005 closes the C11 requirement. |
 | C14 | services.auth.tokens | TODO | | | | | |
 | C15 | api.auth | TODO | | | | | |
 | C16 | api.rbac | TODO | | | | | |
