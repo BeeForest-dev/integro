@@ -29,24 +29,52 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ## Current contract
 
 ```
-ID:          C20
-Name:        models.flow
-State:       ACCEPTED
+ID:          C21
+Name:        services.conditions
+State:       CONTRACTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    owner
-Contract:    see docs/CONTRACTS.md, section C20
-Delivery:    docs/reviews/C20.md
-Note:        Flow + FlowVersion (0009, unique(flow_id, version)); pydantic
-             definition schema validated in the repository (422 with exact
-             JSON path; SUPPORTED_TYPES from C18 as the single registry);
-             OrgScope-first CRUD, version reads behind the ownership-proven
-             trust boundary; append-only versioning.
-             ACCEPTED 2026-11-08: 140 passed; reviewer probes (versioning,
-             exact 422 paths, isolation on flow + history); mutations on
-             validation bypass and unique constraint (full schema rebuild)
-             caught. Awaiting owner sign-off.
+Awaiting:    implementer
+Contract:    see docs/CONTRACTS.md, section C21
+Delivery:    docs/reviews/C21.md
+Note:        Reviewer decisions:
+             - backend/app/services/conditions.py, stdlib only.
+             - Tree shape: {"all": [node, ...]} / {"any": [node, ...]}
+               (nestable); leaf clause {"field": "a.b.c", "op": name,
+               "value": comparable}. Field paths are dot-lookups into the
+               payload dict.
+             - Explicit operator registry (dict name -> predicate), NO eval:
+               eq, ne, gt, gte, lt, lte (numeric; type mismatch -> False,
+               never an exception), contains (substring / list membership),
+               exists (value ignored). Unknown operator at runtime -> clause
+               False + recorded path (defense in depth), never a raise.
+             - validate_conditions(tree): raise ConditionValidationError
+               (ValueError subclass) with the JSON path of the first
+               problem ("all[0].op: unknown operator 'regex' (supported:
+               ...)") for: unknown operator, missing field/op keys,
+               non-dict clause, non-dict tree. Empty all -> True, empty any
+               -> False (documented vacuous truth).
+             - evaluate(tree, payload) -> EvaluationResult(matched: bool,
+               failed_paths: list[str]); entries rendered "all[0]: amount gt
+               100" for the UI. Missing payload field -> clause False, path
+               recorded, no exception.
+             - Save-time wiring (part of this contract): FlowDefinition (C20
+               schema file) gains optional conditions: dict | None with a
+               field validator delegating to validate_conditions (errors
+               re-raised as ValueError so the C20 422-path machinery works
+               unchanged). This is the ONE allowed touch of the accepted C20
+               schema file.
+             - Tests (no PG needed): operator truth tables incl. boundaries;
+               nested paths; missing field -> False + path, no raise;
+               all/any nesting; type mismatch on gt -> False; validate:
+               unknown op (lists supported, has path), malformed clause,
+               non-dict tree; runtime unknown op -> False, no raise;
+               "eval(" absent from the module source; integration: create
+               flow with bad conditions -> 422 via the C20 repository.
+               Self-checks: drop an operator from the registry -> its truth
+               table fails; make missing-field raise -> the missing-field
+               test fails. Stop after C21.
 ```
 ## Log (append only, newest last)
 
@@ -148,3 +176,5 @@ Note:        Flow + FlowVersion (0009, unique(flow_id, version)); pydantic
 | 2026-11-08 03:00 | owner | C19 sign-off -> ACCEPTED in docs/TRACKER.md. Sprint 2 (M1) fully signed off. |
 | 2026-11-08 03:05 | reviewer | C20 models.flow CONTRACTED per workflow rule: Flow + FlowVersion (0009), pydantic definition schema validated in the repository (422 with exact path, SUPPORTED_TYPES from C18 as the single registry), OrgScope-first versioning CRUD, no new deps. Sprint 3 (M2) begins. Awaiting implementer. |
 | 2026-11-08 03:40 | reviewer | C20 ACCEPTED - versioned flows verified: exact 422 paths (trigger / trigger.type / actions.0.type with supported lists), tenant isolation on flow + version history, monotonic versioning; mutations on validation bypass and unique(flow_id, version) via full schema rebuild caught; 140 passed, ruff/mypy clean. Awaiting owner sign-off. C21 not started. |
+| 2026-11-08 04:00 | owner | C20 sign-off -> ACCEPTED in docs/TRACKER.md. |
+| 2026-11-08 04:05 | reviewer | C21 services.conditions CONTRACTED per workflow rule: stdlib-only condition tree (all/any + operator registry, no eval), validate at save time wired into the C20 FlowDefinition as the one allowed touch, runtime never raises. Awaiting implementer. |
