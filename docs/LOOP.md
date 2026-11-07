@@ -29,22 +29,54 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ## Current contract
 
 ```
-ID:          C19
-Name:        services.audit
-State:       ACCEPTED
+ID:          C20
+Name:        models.flow
+State:       CONTRACTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    owner
-Contract:    see docs/CONTRACTS.md, section C19
-Delivery:    docs/reviews/C19.md
-Note:        Migration 0008 (entity/entity_id/before_json/after_json/ip);
-             record_audit strict extended writer; try_record_audit =
-             SAVEPOINT-isolated, logs identifiers only; C15 call sites on
-             the safe path.
-             ACCEPTED 2026-11-08: 131 passed; reviewer FK-failure probe
-             (None + caller insert committed + clean log shape); both
-             mutations caught. Sprint 2 (M1) complete after owner sign-off.
+Awaiting:    implementer
+Contract:    see docs/CONTRACTS.md, section C20
+Delivery:    docs/reviews/C20.md
+Note:        Reviewer decisions:
+             - app/models/flow.py: Flow(id uuid pk, organization_id FK not
+               null, name str, enabled bool default True, created_at) +
+               FlowVersion(id uuid pk, flow_id FK not null, version int,
+               definition JSONB not null, created_at); unique(flow_id,
+               version). Tables flows, flow_versions. Migration 0009_flows.
+               NO current_version FK on Flow - "latest" is
+               max(flow_versions.version) per flow (avoids circular FK).
+             - app/schemas/flow_definition.py: pydantic v2 models
+               FlowDefinition(trigger=Trigger, actions=list[Action]);
+               Trigger(type=str), Action(type=str, config=dict default {});
+               type membership validated in a field_validator against
+               SUPPORTED_TYPES from app.models (C18 - the SINGLE registry);
+               error message lists the supported types.
+             - Validation runs in the REPOSITORY before any insert
+               ("validated against the JSON schema before write"):
+               pydantic ValidationError -> AppError(status 422, detail
+               "<json-path>: <message>", e.g. "trigger.type: unsupported
+               type 'carrier_pigeon' (supported: http_api, imap_mailbox,
+               telegram, webhook_in)") - first failure wins.
+             - app/repositories/flows.py, OrgScope-first:
+               create_flow(session, scope, *, name, definition) -> Flow
+               (validates, inserts flow + version 1, one transaction);
+               update_flow_definition(session, scope, flow_id, definition)
+               -> FlowVersion (validates, next version number = max+1);
+               set_enabled(session, scope, flow_id, enabled) -> Flow;
+               get_flow / list_flows via OrgScope; get_current_definition
+               (latest version row); version_history (ordered asc).
+             - No API endpoints (M4). No new dependencies (pydantic present).
+             - Tests (PG-backed, no skips): migration 0009 cycle; create
+               flow + version 1 persisted; update bumps version 2 monotonic
+               unique; definition validation: missing trigger -> 422 path
+               "trigger"; unknown trigger type -> 422 listing supported;
+               unknown action type -> 422 path into actions; enabled toggle;
+               tenant isolation (org B get -> None); version history order.
+               Self-checks: bypass validation in create -> the bad-type test
+               must fail; drop the unique(flow_id, version) constraint in
+               the migration -> a double-version test must fail. Stop
+               after C20.
 ```
 ## Log (append only, newest last)
 
@@ -142,3 +174,5 @@ Note:        Migration 0008 (entity/entity_id/before_json/after_json/ip);
 | 2026-11-08 02:00 | owner | C18 sign-off -> ACCEPTED in docs/TRACKER.md. |
 | 2026-11-08 02:05 | reviewer | C19 services.audit CONTRACTED per workflow rule: migration 0008 (entity/entity_id/before/after/ip), record_audit extended + try_record_audit with SAVEPOINT isolation, no-payload logging rule, C15 two call sites switch to the safe variant. Awaiting implementer. |
 | 2026-11-08 02:40 | reviewer | C19 ACCEPTED - full audit shape with SAVEPOINT isolation verified (reviewer FK-failure probe: None + caller survives + identifier-only log); both mutations caught; 131 passed, ruff/mypy clean. Sprint 2 (M1) complete after owner sign-off. C20 awaits owner command through the reviewer (workflow rule). |
+| 2026-11-08 03:00 | owner | C19 sign-off -> ACCEPTED in docs/TRACKER.md. Sprint 2 (M1) fully signed off. |
+| 2026-11-08 03:05 | reviewer | C20 models.flow CONTRACTED per workflow rule: Flow + FlowVersion (0009), pydantic definition schema validated in the repository (422 with exact path, SUPPORTED_TYPES from C18 as the single registry), OrgScope-first versioning CRUD, no new deps. Sprint 3 (M2) begins. Awaiting implementer. |
