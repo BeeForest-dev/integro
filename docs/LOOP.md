@@ -31,22 +31,21 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C15
 Name:        api.auth
-State:       GENERATED
+State:       ACCEPTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    reviewer
+Awaiting:    owner
 Contract:    see docs/CONTRACTS.md, section C15
 Delivery:    docs/reviews/C15.md
-Note:        CHANGES_REQUESTED 2026-11-07: /auth/refresh must verify CURRENT
-             membership through OrgScope (same pattern as /me; 403 "no
-             membership in this organization" when absent) before rotating.
-             Reviewer-verified live: after deleting the membership, refresh
-             still mints a fresh pair (200) - a removed owner could refresh
-             for up to 7 days. One new test: revoked membership -> refresh
-             403; self-check: check removed -> test FAILS. Everything else
-             verified: 102 passed, 3 mutations caught, response shapes
-             leak-free.
+Note:        POST /auth/register, /auth/login, /auth/refresh (cookie-only,
+             OrgScope membership check before rotation), GET /auth/me.
+             Generic 401 "Invalid credentials"; 409 duplicate email/slug;
+             httpOnly integro_refresh (path=/auth, lax); audit skeleton
+             (0006_audit_log, C19 extends); services orchestrate.
+             ACCEPTED 2026-11-07 after one fix round: revocation probe by
+             reviewer -> 403; mutation on the membership check fails the new
+             test. 103 passed, ruff/mypy clean. Awaiting owner sign-off.
 ```
 ## Log (append only, newest last)
 
@@ -127,3 +126,4 @@ Note:        CHANGES_REQUESTED 2026-11-07: /auth/refresh must verify CURRENT
 | 2026-11-08 15:30 | implementer | C15 fix: /auth/refresh checks membership through OrgScope (403 after revocation); new test deletes the membership row and expects 403; mutation verified (check removed -> test fails) - suite 103 passed, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-07 21:05 | reviewer | C15 api.auth CONTRACTED per workflow rule: 4 endpoints, httpOnly refresh cookie with rotation, generic 401 (probe-safe), services orchestrate (registration/login/audit minimal, C19 extends), migration 0006_audit_log, PG-backed endpoint tests. Awaiting implementer. |
 | 2026-11-07 22:30 | reviewer | C15 CHANGES_REQUESTED - endpoints/audit/cookie verified (102 passed, 3 mutations caught, live probes leak-free) but /auth/refresh skips the membership check: a revoked user still rotates tokens (reviewer probe, 200). One fix + test required. See docs/reviews/C15.md. |
+| 2026-11-07 23:00 | reviewer | C15 ACCEPTED after fix round - /auth/refresh verifies membership through OrgScope before rotating; reviewer revocation probe -> 403; mutation on the check fails the new test; 103 passed, ruff/mypy clean. Awaiting owner sign-off. C16 not started. |
