@@ -12,6 +12,7 @@ from pathlib import Path
 
 import httpx
 import pytest
+from alembic import command
 from sqlalchemy import delete, select
 
 from app.db import engine as engine_module
@@ -53,10 +54,20 @@ def environment(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def database():
-    """Empty tables per test (requests manage their own engine per call)."""
+    """Schema at head and empty tables per test (requests manage engines)."""
+    command.upgrade(_alembic_cfg(), "head")
     asyncio.run(_clean_all())
     yield
     asyncio.run(_clean_all())
+
+
+def _alembic_cfg():
+    from alembic.config import Config
+
+    cfg = Config()
+    cfg.set_main_option("script_location", str(BACKEND_DIR / "alembic"))
+    cfg.set_main_option("sqlalchemy.url", _database_url())
+    return cfg
 
 
 async def _clean_all():
