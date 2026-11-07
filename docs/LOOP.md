@@ -31,11 +31,11 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C14
 Name:        services.auth.tokens
-State:       CHANGES_REQUESTED
+State:       GENERATED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    implementer
+Awaiting:    reviewer
 Contract:    see docs/CONTRACTS.md, section C14
 Delivery:    docs/reviews/C14.md
 Note:        CHANGES_REQUESTED 2026-11-07: one fix - non-ASCII token segments
@@ -112,6 +112,7 @@ Note:        CHANGES_REQUESTED 2026-11-07: one fix - non-ASCII token segments
 | 2026-11-07 13:00 | owner | C12 sign-off -> ACCEPTED in docs/TRACKER.md. Anti-leak keystone signed off; Sprint 2 progress: C10, C11, C12 done. |
 | 2026-11-07 18:30 | implementer | C13 GENERATED per owner "с13 продолжай": hash_password/verify_password (argon2id; malformed hash -> False; empty -> ValueError) + C11 standing requirement delivered (users.password_hash via migration 0005); 9 new tests, InvalidHash-mutation proven - suite 78 passed, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-08 10:30 | implementer | C14 GENERATED (CONTRACTED block present - first module under the new rule-0): compact HS256 JWTs (fixed header, cryptography HMAC + compare_digest), issue_token_pair/verify_access/verify_refresh, typed TokenError/TokenExpired/TokenInvalid; 10 tests incl. strengthened alg=none fixture - suite 88 passed, ruff/mypy clean. Awaiting reviewer. |
+| 2026-11-08 13:30 | implementer | C14 fix: UnicodeEncodeError on non-ASCII token segments -> TokenInvalid (upfront ASCII validation, raw bytes reused); 2 new unicode tests; mutation verified (guard removed -> both fail) - suite 90 passed, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-07 18:00 | reviewer | C13 ACCEPTED - argon2id hash/verify with (VerificationError, InvalidHash) tuple (hierarchy fact verified), users.password_hash via migration 0005 (C11 standing requirement closed); mutations on both tuple elements fail dedicated tests; 78 passed, ruff/mypy clean. Awaiting owner sign-off. C14 not started. |
 | 2026-11-07 18:15 | owner + reviewer | workflow rule agreed and written into AGENTS.md section 8: the only valid start signal is State: CONTRACTED in LOOP.md; owner chat messages do not override it; reviewer writes the CONTRACTED block before any module starts. |
 | 2026-11-07 18:30 | owner | C13 sign-off -> ACCEPTED in docs/TRACKER.md. |

@@ -150,3 +150,19 @@ def test_garbage_string_is_rejected():
         verify_access_token("not.a.jwt.at.all", SECRET, now=NOW)
     with pytest.raises(TokenInvalid):
         verify_access_token("total garbage", SECRET, now=NOW)
+
+
+def test_non_ascii_segments_are_rejected():
+    """Non-ASCII token segments raise TokenInvalid, not UnicodeEncodeError."""
+    with pytest.raises(TokenInvalid):
+        verify_access_token("héllo.wörld.x", SECRET, now=NOW)
+
+
+def test_unicode_in_payload_segment_is_rejected():
+    """A valid token with injected unicode in the payload is TokenInvalid."""
+    pair = issue_token_pair(uuid.uuid4(), uuid.uuid4(), SECRET, now=NOW)
+    header, payload, signature = pair.access_token.split(".")
+    unicode_payload = payload[:2] + "ü" + payload[2:]
+
+    with pytest.raises(TokenInvalid):
+        verify_access_token(".".join([header, unicode_payload, signature]), SECRET, now=NOW + 10)

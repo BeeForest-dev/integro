@@ -129,11 +129,16 @@ def _verify(
     if len(parts) != 3:
         raise TokenInvalid("a token must have exactly three parts")
     header_b64, payload_b64, signature_b64 = parts
-    if header_b64.encode("ascii", "strict") != _b64url_encode(_HEADER_JSON):
+    try:
+        header_raw = header_b64.encode("ascii", "strict")
+        payload_raw = payload_b64.encode("ascii", "strict")
+        signature_raw = signature_b64.encode("ascii", "strict")
+    except UnicodeEncodeError as exc:
+        raise TokenInvalid("token segments must be ASCII") from exc
+    if header_raw != _b64url_encode(_HEADER_JSON):
         raise TokenInvalid("unexpected token header")
-    signing_input = header_b64 + "." + payload_b64
-    expected = _b64url_encode(_signature(signing_input.encode("ascii"), secret))
-    if not hmac.compare_digest(expected, signature_b64.encode("ascii")):
+    expected = _b64url_encode(_signature(header_raw + b"." + payload_raw, secret))
+    if not hmac.compare_digest(expected, signature_raw):
         raise TokenInvalid("signature mismatch")
     try:
         claims = json.loads(_b64url_decode(payload_b64))
