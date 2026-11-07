@@ -29,23 +29,40 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ## Current contract
 
 ```
-ID:          C15
-Name:        api.auth
-State:       ACCEPTED
+ID:          C16
+Name:        api.rbac
+State:       CONTRACTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    owner
-Contract:    see docs/CONTRACTS.md, section C15
-Delivery:    docs/reviews/C15.md
-Note:        POST /auth/register, /auth/login, /auth/refresh (cookie-only,
-             OrgScope membership check before rotation), GET /auth/me.
-             Generic 401 "Invalid credentials"; 409 duplicate email/slug;
-             httpOnly integro_refresh (path=/auth, lax); audit skeleton
-             (0006_audit_log, C19 extends); services orchestrate.
-             ACCEPTED 2026-11-07 after one fix round: revocation probe by
-             reviewer -> 403; mutation on the membership check fails the new
-             test. 103 passed, ruff/mypy clean. Awaiting owner sign-off.
+Awaiting:    implementer
+Contract:    see docs/CONTRACTS.md, section C16
+Delivery:    docs/reviews/C16.md
+Note:        Reviewer decisions:
+             - backend/app/api/security.py (C15 is NOT touched):
+               get_current_claims(request, settings) -> dict: shared bearer
+               extraction + verify_access_token; missing/malformed/expired/
+               refresh-as-access -> 401 "Invalid credentials" (generic,
+               same wording as C15).
+               get_current_membership(request, session, settings) ->
+               Membership: claims -> OrgScope membership lookup (C12 pattern);
+               None -> 403 "no membership in this organization" (NOT 404 -
+               contract: no existence probing).
+               require_roles(*allowed: MembershipRole) -> dependency: role not
+               in the explicit set -> 403 with the required roles in the
+               detail ("requires one of: owner, admin"). EXPLICIT allowed-set
+               only - no role hierarchy magic, no prebuilt constants
+               (ergonomics are the caller's one-liner).
+             - Membership resolution always through OrgScope with the token's
+               org; role read from the DB row, never from the token.
+             - Tests (PG-backed, no skips): a scratch FastAPI app in the test
+               module with one route protected by require_roles(OWNER, ADMIN):
+               owner -> 200; viewer -> 403 with "owner"/"admin" in the detail;
+               membership deleted -> 403 (message consistent with C15, not
+               404); no bearer -> 401; expired token -> 401; refresh token as
+               access -> 401. Self-checks: remove the role check -> the
+               viewer test must fail; remove the membership-None branch ->
+               the deleted-membership test must fail. Stop after C16.
 ```
 ## Log (append only, newest last)
 
@@ -127,3 +144,5 @@ Note:        POST /auth/register, /auth/login, /auth/refresh (cookie-only,
 | 2026-11-07 21:05 | reviewer | C15 api.auth CONTRACTED per workflow rule: 4 endpoints, httpOnly refresh cookie with rotation, generic 401 (probe-safe), services orchestrate (registration/login/audit minimal, C19 extends), migration 0006_audit_log, PG-backed endpoint tests. Awaiting implementer. |
 | 2026-11-07 22:30 | reviewer | C15 CHANGES_REQUESTED - endpoints/audit/cookie verified (102 passed, 3 mutations caught, live probes leak-free) but /auth/refresh skips the membership check: a revoked user still rotates tokens (reviewer probe, 200). One fix + test required. See docs/reviews/C15.md. |
 | 2026-11-07 23:00 | reviewer | C15 ACCEPTED after fix round - /auth/refresh verifies membership through OrgScope before rotating; reviewer revocation probe -> 403; mutation on the check fails the new test; 103 passed, ruff/mypy clean. Awaiting owner sign-off. C16 not started. |
+| 2026-11-07 23:15 | owner | C15 sign-off -> ACCEPTED in docs/TRACKER.md. |
+| 2026-11-07 23:20 | reviewer | C16 api.rbac CONTRACTED per workflow rule: security.py with get_current_claims/get_current_membership/require_roles, explicit allowed-set, 403 semantics per contract (membership->403 not 404, insufficient role->403 with required roles), C15 untouched. Awaiting implementer. |
