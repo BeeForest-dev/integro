@@ -31,20 +31,21 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C14
 Name:        services.auth.tokens
-State:       GENERATED
+State:       ACCEPTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    reviewer
+Awaiting:    owner
 Contract:    see docs/CONTRACTS.md, section C14
 Delivery:    docs/reviews/C14.md
-Note:        CHANGES_REQUESTED 2026-11-07: one fix - non-ASCII token segments
-             must surface as TokenInvalid, not UnicodeEncodeError (header
-             strict-ascii encode + payload b64decode both exposed; reviewer
-             probe verified). Add a test with a unicode token and a
-             unicode-in-payload token; self-check: fix reverted -> test
-             FAILS. Everything else verified: 88 passed; alg=none,
-             exp-string/bool, typ/exp mutations caught by dedicated tests.
+Note:        HS256 compact JWT (fixed header, compare_digest before parsing,
+             exp required, iss/aud/typ exact, no role claim, explicit secret
+             param). Non-ASCII segments -> TokenInvalid (ASCII-validated up
+             front, raw bytes reused downstream).
+             ACCEPTED 2026-11-07 after one fix round: three unicode attack
+             vectors re-run by reviewer -> TokenInvalid; mutation on the
+             guard fails both new tests. 90 passed, ruff/mypy clean. Awaiting
+             owner sign-off.
 ```
 ## Log (append only, newest last)
 
@@ -118,3 +119,4 @@ Note:        CHANGES_REQUESTED 2026-11-07: one fix - non-ASCII token segments
 | 2026-11-07 18:30 | owner | C13 sign-off -> ACCEPTED in docs/TRACKER.md. |
 | 2026-11-07 18:35 | reviewer | C14 services.auth.tokens CONTRACTED per the new workflow rule: HS256 compact JWT via cryptography (allow-listed, PyJWT rejected as not allow-listed), explicit secret param, typed TokenExpired/TokenInvalid. Awaiting implementer. |
 | 2026-11-07 19:30 | reviewer | C14 CHANGES_REQUESTED - core verified (fixed header, compare_digest before parsing, typed errors, 88 passed, typ/exp mutations caught) but a unicode token escapes as UnicodeEncodeError instead of TokenInvalid (live probe). One fix + test required. See docs/reviews/C14.md. |
+| 2026-11-07 20:30 | reviewer | C14 ACCEPTED after fix round - all three unicode segments (token/payload/signature) raise TokenInvalid; mutation on the ASCII guard fails both new tests; 90 passed, ruff/mypy clean. Awaiting owner sign-off. C15 not started. |
