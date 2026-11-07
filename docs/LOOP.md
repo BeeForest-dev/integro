@@ -31,11 +31,11 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C15
 Name:        api.auth
-State:       CONTRACTED
+State:       GENERATED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    implementer
+Awaiting:    reviewer
 Contract:    see docs/CONTRACTS.md, section C15
 Delivery:    docs/reviews/C15.md
 Note:        Reviewer decisions:
@@ -158,4 +158,5 @@ Note:        Reviewer decisions:
 | 2026-11-07 19:30 | reviewer | C14 CHANGES_REQUESTED - core verified (fixed header, compare_digest before parsing, typed errors, 88 passed, typ/exp mutations caught) but a unicode token escapes as UnicodeEncodeError instead of TokenInvalid (live probe). One fix + test required. See docs/reviews/C14.md. |
 | 2026-11-07 20:30 | reviewer | C14 ACCEPTED after fix round - all three unicode segments (token/payload/signature) raise TokenInvalid; mutation on the ASCII guard fails both new tests; 90 passed, ruff/mypy clean. Awaiting owner sign-off. C15 not started. |
 | 2026-11-07 21:00 | owner | C14 sign-off -> ACCEPTED in docs/TRACKER.md. |
+| 2026-11-08 12:00 | implementer | C15 GENERATED: /auth register/login/refresh/me (httpOnly cookie rotation, byte-identical 401, 409 via C10 pattern, OrgScope role in /me), services registration+login+audit, repositories users+memberships, migration 0006_audit_log; 12 PG-backed scenarios, all three required mutations verified - suite 102 passed, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-07 21:05 | reviewer | C15 api.auth CONTRACTED per workflow rule: 4 endpoints, httpOnly refresh cookie with rotation, generic 401 (probe-safe), services orchestrate (registration/login/audit minimal, C19 extends), migration 0006_audit_log, PG-backed endpoint tests. Awaiting implementer. |
