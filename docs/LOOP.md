@@ -29,24 +29,50 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ## Current contract
 
 ```
-ID:          C13
-Name:        services.auth.password
-State:       ACCEPTED
+ID:          C14
+Name:        services.auth.tokens
+State:       CONTRACTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    owner
-Contract:    see docs/CONTRACTS.md, section C13
-Delivery:    docs/reviews/C13.md
-Note:        hash_password/verify_password via argon2id (PasswordHasher
-             defaults), random salt per call; empty password -> ValueError;
-             malformed hash -> False (except (VerificationError, InvalidHash)
-             - both needed, verified issubclass False in argon2-cffi 25.1.0).
-             C11 standing requirement fulfilled here: users.password_hash
-             (nullable String) + migration 0005_user_password_hash.
-             ACCEPTED 2026-11-07: 78 passed on real PG16 (head 47461697779b),
-             ruff/mypy clean; mutations on both except-tuple elements fail
-             dedicated tests. Awaiting owner sign-off.
+Awaiting:    implementer
+Contract:    see docs/CONTRACTS.md, section C14
+Delivery:    docs/reviews/C14.md
+Note:        Reviewer decisions:
+             - backend/app/services/auth/tokens.py; typed errors TokenError
+               (base), TokenExpired, TokenInvalid in the same module (C15
+               maps them to 401 at the API edge).
+             - Compact JWT, HS256. Fixed header {"alg":"HS256","typ":"JWT"}
+               (no algorithm negotiation; alg=none impossible by
+               construction). Signature: cryptography hazmat HMAC-SHA256 +
+               hmac.compare_digest (constant time). cryptography is on the
+               AGENTS.md allow-list -> add pinned to requirements.txt (no
+               owner approval needed). PyJWT alternative rejected: not on
+               the allow-list.
+             - Claims: iss="integro", aud="integro-api", sub=user_id (str),
+               org=organization_id (str), typ in {"access","refresh"},
+               iat, exp. exp is REQUIRED - a token without it is TokenInvalid.
+               No role claim (role comes from the DB membership, never from
+               the token).
+             - TTLs: access 900 s, refresh 7 days - module constants.
+             - API: issue_token_pair(user_id, organization_id, secret,
+               now=None) -> TokenPair(access_token, refresh_token);
+               verify_access_token(token, secret) -> dict claims;
+               verify_refresh_token(token, secret) -> dict claims.
+               secret: str is an EXPLICIT parameter (Settings.SECRET_KEY is
+               wired by C15, not imported here) - keeps the service pure and
+               testable. Deviation from the contract's "core.config" dep,
+               rationale: purity + the contract's own "Side fx: none".
+             - verify: exactly 3 dot-separated parts; header byte-identical
+               to the fixed header; signature compare_digest; iss/aud exact
+               match; typ matches the verifier; exp <= now -> TokenExpired;
+               everything else malformed/wrong -> TokenInvalid.
+             - Tests (no PG needed): roundtrip claims; access/refresh cross
+               rejection; tampered payload; tampered signature; wrong secret;
+               expired -> TokenExpired (build with the module's internal
+               signer with a past exp); missing exp -> TokenInvalid; wrong
+               aud/iss -> TokenInvalid; alg=none token -> TokenInvalid;
+               garbage string -> TokenInvalid. Stop after C14.
 ```
 ## Log (append only, newest last)
 
@@ -115,3 +141,5 @@ Note:        hash_password/verify_password via argon2id (PasswordHasher
 | 2026-11-07 18:30 | implementer | C13 GENERATED per owner "с13 продолжай": hash_password/verify_password (argon2id; malformed hash -> False; empty -> ValueError) + C11 standing requirement delivered (users.password_hash via migration 0005); 9 new tests, InvalidHash-mutation proven - suite 78 passed, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-07 18:00 | reviewer | C13 ACCEPTED - argon2id hash/verify with (VerificationError, InvalidHash) tuple (hierarchy fact verified), users.password_hash via migration 0005 (C11 standing requirement closed); mutations on both tuple elements fail dedicated tests; 78 passed, ruff/mypy clean. Awaiting owner sign-off. C14 not started. |
 | 2026-11-07 18:15 | owner + reviewer | workflow rule agreed and written into AGENTS.md section 8: the only valid start signal is State: CONTRACTED in LOOP.md; owner chat messages do not override it; reviewer writes the CONTRACTED block before any module starts. |
+| 2026-11-07 18:30 | owner | C13 sign-off -> ACCEPTED in docs/TRACKER.md. |
+| 2026-11-07 18:35 | reviewer | C14 services.auth.tokens CONTRACTED per the new workflow rule: HS256 compact JWT via cryptography (allow-listed, PyJWT rejected as not allow-listed), explicit secret param, typed TokenExpired/TokenInvalid. Awaiting implementer. |
