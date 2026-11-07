@@ -31,17 +31,22 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C13
 Name:        services.auth.password
-State:       GENERATED
+State:       ACCEPTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    reviewer
+Awaiting:    owner
 Contract:    see docs/CONTRACTS.md, section C13
 Delivery:    docs/reviews/C13.md
-             ACCEPTED 2026-11-07 after one fix round: all four reviewer
-             adversarial probes (OR-poison, union, text(), !=) rejected;
-             mutations on OR/single-FROM checks fail the new tests as
-             required. 69 passed, ruff/mypy clean. Awaiting owner sign-off.
+Note:        hash_password/verify_password via argon2id (PasswordHasher
+             defaults), random salt per call; empty password -> ValueError;
+             malformed hash -> False (except (VerificationError, InvalidHash)
+             - both needed, verified issubclass False in argon2-cffi 25.1.0).
+             C11 standing requirement fulfilled here: users.password_hash
+             (nullable String) + migration 0005_user_password_hash.
+             ACCEPTED 2026-11-07: 78 passed on real PG16 (head 47461697779b),
+             ruff/mypy clean; mutations on both except-tuple elements fail
+             dedicated tests. Awaiting owner sign-off.
 ```
 ## Log (append only, newest last)
 
@@ -108,3 +113,4 @@ Delivery:    docs/reviews/C13.md
 | 2026-11-07 12:40 | reviewer | C12 ACCEPTED after fix round - _assert_scoped enforces Select-only/no-OR/single-FROM/pin-belongs-to-entity; all four adversarial probes re-run by reviewer now reject with ScopeError; mutations on OR and single-FROM checks fail the new tests. 69 passed, ruff/mypy clean. Awaiting owner sign-off. C13 not started. |
 | 2026-11-07 13:00 | owner | C12 sign-off -> ACCEPTED in docs/TRACKER.md. Anti-leak keystone signed off; Sprint 2 progress: C10, C11, C12 done. |
 | 2026-11-07 18:30 | implementer | C13 GENERATED per owner "с13 продолжай": hash_password/verify_password (argon2id; malformed hash -> False; empty -> ValueError) + C11 standing requirement delivered (users.password_hash via migration 0005); 9 new tests, InvalidHash-mutation proven - suite 78 passed, ruff/mypy clean. Awaiting reviewer. |
+| 2026-11-07 18:00 | reviewer | C13 ACCEPTED - argon2id hash/verify with (VerificationError, InvalidHash) tuple (hierarchy fact verified), users.password_hash via migration 0005 (C11 standing requirement closed); mutations on both tuple elements fail dedicated tests; 78 passed, ruff/mypy clean. Awaiting owner sign-off. C14 not started. |
