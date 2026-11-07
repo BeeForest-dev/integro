@@ -10,6 +10,7 @@ from typing import Any
 from pydantic import BaseModel, Field, field_validator
 
 from app.models import SUPPORTED_TYPES
+from app.services.conditions import validate_conditions
 
 
 def _supported_listing() -> str:
@@ -61,12 +62,23 @@ class Action(BaseModel):
 
 
 class FlowDefinition(BaseModel):
-    """A complete flow definition: one trigger, ordered actions.
+    """A complete flow definition: one trigger, ordered actions, conditions.
 
     Attributes:
         trigger: The trigger configuration (required).
         actions: The ordered action steps (may be empty).
+        conditions: Optional condition tree (validated at save time via
+            :func:`app.services.conditions.validate_conditions`).
     """
 
     trigger: Trigger
     actions: list[Action] = Field(default_factory=list)
+    conditions: dict[str, Any] | None = None
+
+    @field_validator("conditions")
+    @classmethod
+    def _conditions_must_be_valid(cls, value: dict[str, Any] | None) -> dict[str, Any] | None:
+        """Reject malformed condition trees so C20's 422 machinery sees ValueError."""
+        if value is not None:
+            validate_conditions(value)
+        return value

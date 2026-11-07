@@ -269,6 +269,30 @@ def test_flows_are_scoped_between_organizations(run):
     run(_scenario)
 
 
+def test_create_flow_with_invalid_conditions_returns_422(run):
+    """C21 wiring: bad conditions fail at save time through the C20 422 path."""
+    async def _scenario(factory):
+        async with factory() as session:
+            organization = Organization(name="Org", slug="bad-conditions-org")
+            session.add(organization)
+            await session.commit()
+            scope = OrgScope(session, organization.id)
+
+            bad = {
+                "trigger": {"type": "webhook_in"},
+                "actions": [],
+                "conditions": {"all": [{"field": "amount", "op": "regex"}]},
+            }
+            with pytest.raises(AppError) as exc_info:
+                await create_flow(session, scope, name="Bad", definition=bad)
+
+            assert exc_info.value.status_code == 422
+            assert "conditions" in exc_info.value.detail
+            assert "all[0].op:" in exc_info.value.detail
+
+    run(_scenario)
+
+
 def test_version_history_order_is_ascending(run):
     """History is ordered by version ascending across several updates."""
     async def _scenario(factory):
