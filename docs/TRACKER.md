@@ -43,7 +43,7 @@ Update this file **daily** (5 minutes) — it is the only progress source that c
 | C16 | api.rbac | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C16.md); owner sign-off 2026-11-07. 109 passed; cross-org role resolution probe; both mutations caught; C15 untouched. |
 | C17 | core.crypto | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C17.md); owner sign-off 2026-11-08. 119 passed; fail-closed probes (wrong/empty key, tampering, truncation, garbage); both mutations caught. |
 | C18 | models.connections | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C18.md); owner sign-off 2026-11-08. 127 passed; tenant isolation + leak-free serialization probes; both mutations caught. |
-| C19 | services.audit | G4 | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C19.md); owner sign-off pending. 131 passed; SAVEPOINT isolation probe; both mutations caught. Sprint 2 (M1) complete after sign-off. |
+| C19 | services.audit | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C19.md); owner sign-off 2026-11-08. 131 passed; SAVEPOINT isolation probe; both mutations caught. Sprint 2 (M1) closed. |
 
 **Sprint 2 exit criterion**
 - [ ] test proves org A cannot read org B's rows (C12 is the anti-leak keystone)
