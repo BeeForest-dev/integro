@@ -31,38 +31,20 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C16
 Name:        api.rbac
-State:       GENERATED
+State:       ACCEPTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    reviewer
+Awaiting:    owner
 Contract:    see docs/CONTRACTS.md, section C16
 Delivery:    docs/reviews/C16.md
-Note:        Reviewer decisions:
-             - backend/app/api/security.py (C15 is NOT touched):
-               get_current_claims(request, settings) -> dict: shared bearer
-               extraction + verify_access_token; missing/malformed/expired/
-               refresh-as-access -> 401 "Invalid credentials" (generic,
-               same wording as C15).
-               get_current_membership(request, session, settings) ->
-               Membership: claims -> OrgScope membership lookup (C12 pattern);
-               None -> 403 "no membership in this organization" (NOT 404 -
-               contract: no existence probing).
-               require_roles(*allowed: MembershipRole) -> dependency: role not
-               in the explicit set -> 403 with the required roles in the
-               detail ("requires one of: owner, admin"). EXPLICIT allowed-set
-               only - no role hierarchy magic, no prebuilt constants
-               (ergonomics are the caller's one-liner).
-             - Membership resolution always through OrgScope with the token's
-               org; role read from the DB row, never from the token.
-             - Tests (PG-backed, no skips): a scratch FastAPI app in the test
-               module with one route protected by require_roles(OWNER, ADMIN):
-               owner -> 200; viewer -> 403 with "owner"/"admin" in the detail;
-               membership deleted -> 403 (message consistent with C15, not
-               404); no bearer -> 401; expired token -> 401; refresh token as
-               access -> 401. Self-checks: remove the role check -> the
-               viewer test must fail; remove the membership-None branch ->
-               the deleted-membership test must fail. Stop after C16.
+Note:        security.py: get_current_claims (generic 401), get_current_
+             membership (OrgScope, 403 not 404), require_roles (explicit set,
+             403 with required roles in detail). Role from DB row only.
+             ACCEPTED 2026-11-07: 109 passed; reviewer cross-org probe (owner
+             in A / viewer in B) -> role resolved from the token's org;
+             mutations on role-check and membership-None branch caught. C15
+             untouched. Awaiting owner sign-off.
 ```
 ## Log (append only, newest last)
 
@@ -147,3 +129,4 @@ Note:        Reviewer decisions:
 | 2026-11-07 23:15 | owner | C15 sign-off -> ACCEPTED in docs/TRACKER.md. |
 | 2026-11-07 23:20 | reviewer | C16 api.rbac CONTRACTED per workflow rule: security.py with get_current_claims/get_current_membership/require_roles, explicit allowed-set, 403 semantics per contract (membership->403 not 404, insufficient role->403 with required roles), C15 untouched. Awaiting implementer. |
 | 2026-11-08 19:00 | implementer | C16 GENERATED: api/security.py (claims 401 generic, membership via OrgScope 403-not-404, require_roles explicit set with roles in detail); 6 PG-backed tests on scratch app, both mutations verified - suite 109 passed, ruff/mypy clean. Awaiting reviewer. |
+| 2026-11-07 23:50 | reviewer | C16 ACCEPTED - security.py per contract; reviewer live probes incl. cross-org role resolution (token org B viewer -> 403 with required roles); mutations on role-check and membership-None branch fail dedicated tests; 109 passed, ruff/mypy clean; C15 untouched. Awaiting owner sign-off. C17 not started. |
