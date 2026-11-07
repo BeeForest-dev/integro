@@ -31,11 +31,11 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C15
 Name:        api.auth
-State:       CHANGES_REQUESTED
+State:       GENERATED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    implementer
+Awaiting:    reviewer
 Contract:    see docs/CONTRACTS.md, section C15
 Delivery:    docs/reviews/C15.md
 Note:        CHANGES_REQUESTED 2026-11-07: /auth/refresh must verify CURRENT
@@ -124,5 +124,6 @@ Note:        CHANGES_REQUESTED 2026-11-07: /auth/refresh must verify CURRENT
 | 2026-11-07 21:00 | owner | C14 sign-off -> ACCEPTED in docs/TRACKER.md. |
 | 2026-11-08 12:00 | implementer | C15 GENERATED: /auth register/login/refresh/me (httpOnly cookie rotation, byte-identical 401, 409 via C10 pattern, OrgScope role in /me), services registration+login+audit, repositories users+memberships, migration 0006_audit_log; 12 PG-backed scenarios, all three required mutations verified - suite 102 passed, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-08 12:45 | implementer | C15 post-push CI catch: run #31 failed (auth tests assumed prior migration side effects; CI runs tests/api first on an empty DB) -> fixture now brings schema to head; proven on a freshly recreated database (12/12 standalone); run #32 green. |
+| 2026-11-08 15:30 | implementer | C15 fix: /auth/refresh checks membership through OrgScope (403 after revocation); new test deletes the membership row and expects 403; mutation verified (check removed -> test fails) - suite 103 passed, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-07 21:05 | reviewer | C15 api.auth CONTRACTED per workflow rule: 4 endpoints, httpOnly refresh cookie with rotation, generic 401 (probe-safe), services orchestrate (registration/login/audit minimal, C19 extends), migration 0006_audit_log, PG-backed endpoint tests. Awaiting implementer. |
 | 2026-11-07 22:30 | reviewer | C15 CHANGES_REQUESTED - endpoints/audit/cookie verified (102 passed, 3 mutations caught, live probes leak-free) but /auth/refresh skips the membership check: a revoked user still rotates tokens (reviewer probe, 200). One fix + test required. See docs/reviews/C15.md. |

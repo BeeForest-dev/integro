@@ -254,6 +254,31 @@ def test_refresh_ignores_body_token():
     assert response.status_code == 401
 
 
+def test_refresh_after_membership_revocation_returns_403():
+    """A refresh token is rotated only for an active member: 403 after revocation."""
+    assert _register().status_code == 200
+    login = _login()
+    refresh_token = login.cookies["integro_refresh"]
+
+    async def _revoke():
+        engine = create_engine(_database_url())
+        factory = create_session_factory(engine)
+        try:
+            async with factory() as session:
+                for membership in (await session.scalars(select(Membership))).all():
+                    await session.delete(membership)
+                await session.commit()
+        finally:
+            await engine.dispose()
+
+    asyncio.run(_revoke())
+
+    response = _refresh(cookies={"integro_refresh": refresh_token})
+
+    assert response.status_code == 403
+    assert response.json()["status"] == 403
+
+
 def test_me_returns_role_from_membership():
     """GET /auth/me yields user, org and the membership role."""
     assert _register().status_code == 200

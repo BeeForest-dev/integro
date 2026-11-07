@@ -141,6 +141,15 @@ async def refresh(
     except (TokenError, ValueError, KeyError):
         raise _invalid_credentials() from None
 
+    scope = OrgScope(session, organization_id)
+    membership = await scope.first(
+        scope.query(Membership).where(Membership.user_id == user_id)
+    )
+    if membership is None:
+        raise AppError(
+            "no membership in this organization", status_code=403, title="Forbidden"
+        )
+
     organization = await session.get(Organization, organization_id)
     user = await session.get(User, user_id)
     if organization is None or user is None:
