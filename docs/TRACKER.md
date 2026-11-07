@@ -56,7 +56,7 @@ Update this file **daily** (5 minutes) — it is the only progress source that c
 
 | ID | Contract | Status | G1 | G2 | G3 | G4 | Notes |
 |---|---|---|---|---|---|---|---|
-| C20 | models.flow | G4 | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C20.md); owner sign-off pending. 140 passed; exact 422 paths; both mutations caught (unique constraint via full schema rebuild). |
+| C20 | models.flow | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C20.md); owner sign-off 2026-11-08. 140 passed; exact 422 paths; both mutations caught (unique constraint via full schema rebuild). |
 | C21 | services.conditions | TODO | | | | | |
 | C22 | triggers.webhook | TODO | | | | | |
 | C23 | services.events | TODO | | | | | |
