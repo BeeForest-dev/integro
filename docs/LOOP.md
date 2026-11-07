@@ -29,23 +29,54 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ## Current contract
 
 ```
-ID:          C17
-Name:        core.crypto
-State:       ACCEPTED
+ID:          C18
+Name:        models.connection + repositories.connections
+State:       CONTRACTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    owner
-Contract:    see docs/CONTRACTS.md, section C17
-Delivery:    docs/reviews/C17.md
-Note:        Fernet via HKDF-SHA256 key from SECRET_KEY (info
-             integro-connection-secrets-v1, per-call derivation); CryptoError
-             single typed failure; empty->empty both ways; fail-closed on all
-             malformed input incl. unicode garbage.
-             ACCEPTED 2026-11-08: 119 passed; reviewer probes (wrong/empty
-             key, 4-offset tampering, truncation, garbage) all CryptoError;
-             mutations on empty short-circuit and except-tuple caught.
-             Awaiting owner sign-off.
+Awaiting:    implementer
+Contract:    see docs/CONTRACTS.md, section C18
+Delivery:    docs/reviews/C18.md
+Note:        Reviewer decisions:
+             - backend/app/models/connection.py: Connection(Base) with id
+               (uuid pk), organization_id (FK, not null), name (str),
+               type (str), config (JSONB, default {}), secret_ciphertext
+               (String, nullable), status (str, default "active"),
+               created_at (tz server default). Table `connections`.
+               SUPPORTED_TYPES = {"webhook_in", "telegram", "imap_mailbox",
+               "http_api"} (module frozenset; the 4 connector families of
+               M2/M4).
+             - Type validated in the REPOSITORY create (single choke): unknown
+               type -> ValueError naming the supported list.
+             - Migration 0007_connections.
+             - backend/app/repositories/connections.py, OrgScope-first:
+               create_connection(session, scope, *, name, type, config,
+               plaintext_secret=None, secret) -> Connection (encrypts
+               plaintext_secret via C17; scope.organization_id stamps the
+               row; never returns ciphertext to callers beyond the row);
+               list_connections(session, scope); get_connection(session,
+               scope, connection_id) -> row | None (all reads through
+               OrgScope - dogfooding C12);
+               read_secret(session, scope, connection_id, secret) -> str |
+               None: decrypt via C17; on CryptoError -> persist
+               status="secret_error", return None (never 500); on success
+               when status was "secret_error" -> self-heal back to "active";
+               to_api_dict(connection) -> dict with has_secret (bool) and
+               NEVER secret_ciphertext.
+             - No API endpoints (beyond contract - connector management UI is
+               M4).
+             - Tests (PG-backed, no skips): migration cycle; create persists
+               with config JSONB roundtrip and secret encrypted at rest (raw
+               column is a Fernet token, decrypts with the secret);
+               unknown type -> ValueError listing supported; to_api_dict
+               never leaks ciphertext or plaintext; list/get scoped - org B
+               cannot see org A's connection; read_secret happy path;
+               read_secret with a wrong secret -> status persisted as
+               secret_error, returns None, no exception; read_secret self-
+               heals active after a good decrypt. Self-checks: drop type
+               validation -> unknown-type test fails; drop the secret_error
+               marking -> the wrong-secret test fails. Stop after C18.
 ```
 ## Log (append only, newest last)
 
@@ -135,3 +166,5 @@ Note:        Fernet via HKDF-SHA256 key from SECRET_KEY (info
 | 2026-11-08 00:05 | owner | C16 sign-off -> ACCEPTED in docs/TRACKER.md. |
 | 2026-11-08 00:10 | reviewer | C17 core.crypto CONTRACTED per workflow rule: Fernet with HKDF-derived key from SECRET_KEY (no second env var), typed CryptoError, empty->empty both directions, no new dependencies. Awaiting implementer. |
 | 2026-11-08 00:40 | reviewer | C17 ACCEPTED - Fernet/HKDF crypto verified: reviewer probes (wrong/empty key, tampering x4 offsets, truncation, garbage) all fail closed as CryptoError; mutations on empty short-circuit and except-tuple caught; 119 passed, ruff/mypy clean. Awaiting owner sign-off. C18 not started. |
+| 2026-11-08 01:00 | owner | C17 sign-off -> ACCEPTED in docs/TRACKER.md. |
+| 2026-11-08 01:05 | reviewer | C18 models.connection + repositories.connections CONTRACTED per workflow rule: Connection model + 0007 migration, OrgScope-first CRUD, C17 encryption at rest, secret_error marking with self-heal, to_api_dict never leaks secrets, 4 supported types. Awaiting implementer. |
