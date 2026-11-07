@@ -29,23 +29,60 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ## Current contract
 
 ```
-ID:          C14
-Name:        services.auth.tokens
-State:       ACCEPTED
+ID:          C15
+Name:        api.auth
+State:       CONTRACTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    owner
-Contract:    see docs/CONTRACTS.md, section C14
-Delivery:    docs/reviews/C14.md
-Note:        HS256 compact JWT (fixed header, compare_digest before parsing,
-             exp required, iss/aud/typ exact, no role claim, explicit secret
-             param). Non-ASCII segments -> TokenInvalid (ASCII-validated up
-             front, raw bytes reused downstream).
-             ACCEPTED 2026-11-07 after one fix round: three unicode attack
-             vectors re-run by reviewer -> TokenInvalid; mutation on the
-             guard fails both new tests. 90 passed, ruff/mypy clean. Awaiting
-             owner sign-off.
+Awaiting:    implementer
+Contract:    see docs/CONTRACTS.md, section C15
+Delivery:    docs/reviews/C15.md
+Note:        Reviewer decisions:
+             - Router backend/app/api/auth.py, mounted at /auth in create_app:
+               POST /auth/register {email, password, organization_name,
+               organization_slug} -> 200 {access_token, user:{id,email},
+               organization:{id,name,slug}} + Set-Cookie refresh (httpOnly,
+               samesite=lax, path=/auth, max_age=refresh TTL, secure=False
+               for the local demo - M5 may flip via settings).
+               POST /auth/login {email, password} -> same shape.
+               POST /auth/refresh - reads ONLY the httpOnly cookie
+               "integro_refresh"; rotates the pair (new access in body, new
+               cookie); no body token accepted.
+               GET /auth/me - Authorization: Bearer <access> -> {user,
+               organization, role} where role is read from the membership
+               THROUGH OrgScope (C12) with the token's org.
+               No logout endpoint (beyond the contract).
+             - 401 generic message: "Invalid credentials" byte-identical for
+               unknown email and wrong password (probe-safe); 409 for
+               duplicate email (repositories/users.create_user maps
+               IntegrityError -> AppError 409, C10 pattern) and for duplicate
+               org slug (C10).
+             - Login org choice: the user's oldest membership
+               (min(created_at)); users without membership get the generic
+               401. Documented limitation until M2.
+             - Services orchestrate, router stays thin:
+               services/auth/registration.py (org + user + owner membership
+               + audit, one transaction), services/auth/login.py
+               (authenticate + membership + pair + audit),
+               services/audit.py MINIMAL: audit_log table (id uuid pk,
+               organization_id FK, actor_user_id FK nullable, action str,
+               created_at) + record() - C19 extends both (table shape per
+               C19 contract: singular audit_log; failure-isolation policy is
+               C19's job, C15 records in-transaction).
+               New repositories: users.create_user (409 on duplicate email),
+               memberships.create_membership. Migration 0006_audit_log.
+             - Token secret from Settings.SECRET_KEY (wired in the service
+               layer, passed down explicitly).
+             - Tests via httpx.ASGITransport against create_app() (C09
+               pattern), PG-backed, no skips: register happy path (cookie
+               httpOnly flag asserted, owner role, audit row in DB);
+               duplicate email 409; duplicate slug 409; unknown email vs
+               wrong password -> identical 401 body; login happy path;
+               refresh rotation (new cookie, new access); refresh without
+               cookie 401; refresh with tampered cookie 401; me happy path
+               (role from membership); me without bearer 401; me with
+               refresh-as-access 401. Stop after C15.
 ```
 ## Log (append only, newest last)
 
@@ -120,3 +157,5 @@ Note:        HS256 compact JWT (fixed header, compare_digest before parsing,
 | 2026-11-07 18:35 | reviewer | C14 services.auth.tokens CONTRACTED per the new workflow rule: HS256 compact JWT via cryptography (allow-listed, PyJWT rejected as not allow-listed), explicit secret param, typed TokenExpired/TokenInvalid. Awaiting implementer. |
 | 2026-11-07 19:30 | reviewer | C14 CHANGES_REQUESTED - core verified (fixed header, compare_digest before parsing, typed errors, 88 passed, typ/exp mutations caught) but a unicode token escapes as UnicodeEncodeError instead of TokenInvalid (live probe). One fix + test required. See docs/reviews/C14.md. |
 | 2026-11-07 20:30 | reviewer | C14 ACCEPTED after fix round - all three unicode segments (token/payload/signature) raise TokenInvalid; mutation on the ASCII guard fails both new tests; 90 passed, ruff/mypy clean. Awaiting owner sign-off. C15 not started. |
+| 2026-11-07 21:00 | owner | C14 sign-off -> ACCEPTED in docs/TRACKER.md. |
+| 2026-11-07 21:05 | reviewer | C15 api.auth CONTRACTED per workflow rule: 4 endpoints, httpOnly refresh cookie with rotation, generic 401 (probe-safe), services orchestrate (registration/login/audit minimal, C19 extends), migration 0006_audit_log, PG-backed endpoint tests. Awaiting implementer. |
