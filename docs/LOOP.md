@@ -31,11 +31,11 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C16
 Name:        api.rbac
-State:       CONTRACTED
+State:       GENERATED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    implementer
+Awaiting:    reviewer
 Contract:    see docs/CONTRACTS.md, section C16
 Delivery:    docs/reviews/C16.md
 Note:        Reviewer decisions:
@@ -146,3 +146,4 @@ Note:        Reviewer decisions:
 | 2026-11-07 23:00 | reviewer | C15 ACCEPTED after fix round - /auth/refresh verifies membership through OrgScope before rotating; reviewer revocation probe -> 403; mutation on the check fails the new test; 103 passed, ruff/mypy clean. Awaiting owner sign-off. C16 not started. |
 | 2026-11-07 23:15 | owner | C15 sign-off -> ACCEPTED in docs/TRACKER.md. |
 | 2026-11-07 23:20 | reviewer | C16 api.rbac CONTRACTED per workflow rule: security.py with get_current_claims/get_current_membership/require_roles, explicit allowed-set, 403 semantics per contract (membership->403 not 404, insufficient role->403 with required roles), C15 untouched. Awaiting implementer. |
+| 2026-11-08 19:00 | implementer | C16 GENERATED: api/security.py (claims 401 generic, membership via OrgScope 403-not-404, require_roles explicit set with roles in detail); 6 PG-backed tests on scratch app, both mutations verified - suite 109 passed, ruff/mypy clean. Awaiting reviewer. |
