@@ -29,23 +29,47 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ## Current contract
 
 ```
-ID:          C18
-Name:        models.connection + repositories.connections
-State:       ACCEPTED
+ID:          C19
+Name:        services.audit
+State:       CONTRACTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    owner
-Contract:    see docs/CONTRACTS.md, section C18
-Delivery:    docs/reviews/C18.md
-Note:        Connection model + 0007 migration; OrgScope-first CRUD; C17
-             encryption at rest; read_secret state machine (secret_error
-             persisted, self-heal on good decrypt); to_api_dict leaks
-             nothing (has_secret only).
-             ACCEPTED 2026-11-08: 127 passed; reviewer probes (at-rest
-             Fernet, tenant isolation, api_dict leak check, secret_error
-             marking + self-heal) green; both mutations caught. Awaiting
-             owner sign-off.
+Awaiting:    implementer
+Contract:    see docs/CONTRACTS.md, section C19
+Delivery:    docs/reviews/C19.md
+Note:        Reviewer decisions:
+             - Migration 0008_audit_log_full: add entity (String nullable),
+               entity_id (Uuid nullable), before_json (JSONB nullable),
+               after_json (JSONB nullable), ip (String nullable) to the
+               existing audit_log (C15). Plain op.add_column (SQLite-safe
+               for the C05 scratch tests); existing rows untouched.
+             - services/audit.py: record_audit extended (keyword-only:
+               entity, entity_id, before, after, ip) - still strict, still
+               flush-not-commit. Callers build their own before/after dicts
+               (no diff magic in the service).
+             - Failure isolation lives in a NEW try_record_audit(session,
+               ..., logger=None) -> AuditLog | None: wraps record_audit in
+               session.begin_nested() (SAVEPOINT) + try/except Exception ->
+               structlog event "audit_write_failed" with action/entity/org
+               ids only (NEVER before/after payloads - they may contain
+               secrets) -> returns None; the caller transaction survives.
+               record_audit itself stays strict.
+             - C15 integration (part of this contract): the two call sites in
+               services/auth/registration.py and login.py switch to
+               try_record_audit - audit failure must not break register/
+               login (the contract's error case). Minimal edits, 2 lines
+               each.
+             - Tests (PG-backed, no skips): migration 0008 reflection +
+               up/down/re-up; record_audit full-field roundtrip incl. JSONB
+               diffs; try_record_audit happy path; FORCED failure (FK
+               violation: bogus organization_id) -> returns None, caller
+               transaction still commits its own insert, structlog JSON log
+               contains audit_write_failed and does NOT contain the payload;
+               C15 flows still write audit rows (existing tests green).
+               Self-checks: replace begin_nested with a plain flush -> the
+               failure-isolation test must fail (caller insert dies with the
+               audit row); drop the try/except -> same. Stop after C19.
 ```
 ## Log (append only, newest last)
 
@@ -139,3 +163,5 @@ Note:        Connection model + 0007 migration; OrgScope-first CRUD; C17
 | 2026-11-08 01:00 | owner | C17 sign-off -> ACCEPTED in docs/TRACKER.md. |
 | 2026-11-08 01:05 | reviewer | C18 models.connection + repositories.connections CONTRACTED per workflow rule: Connection model + 0007 migration, OrgScope-first CRUD, C17 encryption at rest, secret_error marking with self-heal, to_api_dict never leaks secrets, 4 supported types. Awaiting implementer. |
 | 2026-11-08 01:40 | reviewer | C18 ACCEPTED - connections verified: at-rest Fernet, tenant isolation via OrgScope, to_api_dict leak-free, secret_error marking + self-heal; mutations on type validation and secret_error marking caught; 127 passed, ruff/mypy clean. Awaiting owner sign-off. C19 not started. |
+| 2026-11-08 02:00 | owner | C18 sign-off -> ACCEPTED in docs/TRACKER.md. |
+| 2026-11-08 02:05 | reviewer | C19 services.audit CONTRACTED per workflow rule: migration 0008 (entity/entity_id/before/after/ip), record_audit extended + try_record_audit with SAVEPOINT isolation, no-payload logging rule, C15 two call sites switch to the safe variant. Awaiting implementer. |
