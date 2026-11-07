@@ -39,7 +39,7 @@ Update this file **daily** (5 minutes) — it is the only progress source that c
 | C12 | repositories.org_scope | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C12.md); owner sign-off 2026-11-07. 69 passed; OR/union/text/two-entity rejections mutation-proven. |
 | C13 | services.auth.password | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C13.md); owner sign-off 2026-11-07. 78 passed; both except-tuple elements mutation-proven; password_hash migration 0005 closes the C11 requirement. |
 | C14 | services.auth.tokens | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C14.md); owner sign-off 2026-11-07. 90 passed; unicode segments -> TokenInvalid, mutation-proven; typ/exp mutations caught. |
-| C15 | api.auth | TODO | | | | | |
+| C15 | api.auth | CHANGES_REQUESTED | ✗ | ✓ | ✓ | ✓ | /auth/refresh skips membership check: revoked user still rotates tokens (reviewer probe). One fix + test required; everything else verified (102 passed, 3 mutations caught). See docs/reviews/C15.md. |
 | C16 | api.rbac | TODO | | | | | |
 | C17 | core.crypto | TODO | | | | | |
 | C18 | models.connections | TODO | | | | | |

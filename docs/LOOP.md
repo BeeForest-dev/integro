@@ -31,58 +31,22 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C15
 Name:        api.auth
-State:       GENERATED
+State:       CHANGES_REQUESTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    reviewer
+Awaiting:    implementer
 Contract:    see docs/CONTRACTS.md, section C15
 Delivery:    docs/reviews/C15.md
-Note:        Reviewer decisions:
-             - Router backend/app/api/auth.py, mounted at /auth in create_app:
-               POST /auth/register {email, password, organization_name,
-               organization_slug} -> 200 {access_token, user:{id,email},
-               organization:{id,name,slug}} + Set-Cookie refresh (httpOnly,
-               samesite=lax, path=/auth, max_age=refresh TTL, secure=False
-               for the local demo - M5 may flip via settings).
-               POST /auth/login {email, password} -> same shape.
-               POST /auth/refresh - reads ONLY the httpOnly cookie
-               "integro_refresh"; rotates the pair (new access in body, new
-               cookie); no body token accepted.
-               GET /auth/me - Authorization: Bearer <access> -> {user,
-               organization, role} where role is read from the membership
-               THROUGH OrgScope (C12) with the token's org.
-               No logout endpoint (beyond the contract).
-             - 401 generic message: "Invalid credentials" byte-identical for
-               unknown email and wrong password (probe-safe); 409 for
-               duplicate email (repositories/users.create_user maps
-               IntegrityError -> AppError 409, C10 pattern) and for duplicate
-               org slug (C10).
-             - Login org choice: the user's oldest membership
-               (min(created_at)); users without membership get the generic
-               401. Documented limitation until M2.
-             - Services orchestrate, router stays thin:
-               services/auth/registration.py (org + user + owner membership
-               + audit, one transaction), services/auth/login.py
-               (authenticate + membership + pair + audit),
-               services/audit.py MINIMAL: audit_log table (id uuid pk,
-               organization_id FK, actor_user_id FK nullable, action str,
-               created_at) + record() - C19 extends both (table shape per
-               C19 contract: singular audit_log; failure-isolation policy is
-               C19's job, C15 records in-transaction).
-               New repositories: users.create_user (409 on duplicate email),
-               memberships.create_membership. Migration 0006_audit_log.
-             - Token secret from Settings.SECRET_KEY (wired in the service
-               layer, passed down explicitly).
-             - Tests via httpx.ASGITransport against create_app() (C09
-               pattern), PG-backed, no skips: register happy path (cookie
-               httpOnly flag asserted, owner role, audit row in DB);
-               duplicate email 409; duplicate slug 409; unknown email vs
-               wrong password -> identical 401 body; login happy path;
-               refresh rotation (new cookie, new access); refresh without
-               cookie 401; refresh with tampered cookie 401; me happy path
-               (role from membership); me without bearer 401; me with
-               refresh-as-access 401. Stop after C15.
+Note:        CHANGES_REQUESTED 2026-11-07: /auth/refresh must verify CURRENT
+             membership through OrgScope (same pattern as /me; 403 "no
+             membership in this organization" when absent) before rotating.
+             Reviewer-verified live: after deleting the membership, refresh
+             still mints a fresh pair (200) - a removed owner could refresh
+             for up to 7 days. One new test: revoked membership -> refresh
+             403; self-check: check removed -> test FAILS. Everything else
+             verified: 102 passed, 3 mutations caught, response shapes
+             leak-free.
 ```
 ## Log (append only, newest last)
 
@@ -161,3 +125,4 @@ Note:        Reviewer decisions:
 | 2026-11-08 12:00 | implementer | C15 GENERATED: /auth register/login/refresh/me (httpOnly cookie rotation, byte-identical 401, 409 via C10 pattern, OrgScope role in /me), services registration+login+audit, repositories users+memberships, migration 0006_audit_log; 12 PG-backed scenarios, all three required mutations verified - suite 102 passed, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-08 12:45 | implementer | C15 post-push CI catch: run #31 failed (auth tests assumed prior migration side effects; CI runs tests/api first on an empty DB) -> fixture now brings schema to head; proven on a freshly recreated database (12/12 standalone); run #32 green. |
 | 2026-11-07 21:05 | reviewer | C15 api.auth CONTRACTED per workflow rule: 4 endpoints, httpOnly refresh cookie with rotation, generic 401 (probe-safe), services orchestrate (registration/login/audit minimal, C19 extends), migration 0006_audit_log, PG-backed endpoint tests. Awaiting implementer. |
+| 2026-11-07 22:30 | reviewer | C15 CHANGES_REQUESTED - endpoints/audit/cookie verified (102 passed, 3 mutations caught, live probes leak-free) but /auth/refresh skips the membership check: a revoked user still rotates tokens (reviewer probe, 200). One fix + test required. See docs/reviews/C15.md. |
