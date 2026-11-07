@@ -31,52 +31,22 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C20
 Name:        models.flow
-State:       GENERATED
+State:       ACCEPTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    reviewer
+Awaiting:    owner
 Contract:    see docs/CONTRACTS.md, section C20
 Delivery:    docs/reviews/C20.md
-Note:        Reviewer decisions:
-             - app/models/flow.py: Flow(id uuid pk, organization_id FK not
-               null, name str, enabled bool default True, created_at) +
-               FlowVersion(id uuid pk, flow_id FK not null, version int,
-               definition JSONB not null, created_at); unique(flow_id,
-               version). Tables flows, flow_versions. Migration 0009_flows.
-               NO current_version FK on Flow - "latest" is
-               max(flow_versions.version) per flow (avoids circular FK).
-             - app/schemas/flow_definition.py: pydantic v2 models
-               FlowDefinition(trigger=Trigger, actions=list[Action]);
-               Trigger(type=str), Action(type=str, config=dict default {});
-               type membership validated in a field_validator against
-               SUPPORTED_TYPES from app.models (C18 - the SINGLE registry);
-               error message lists the supported types.
-             - Validation runs in the REPOSITORY before any insert
-               ("validated against the JSON schema before write"):
-               pydantic ValidationError -> AppError(status 422, detail
-               "<json-path>: <message>", e.g. "trigger.type: unsupported
-               type 'carrier_pigeon' (supported: http_api, imap_mailbox,
-               telegram, webhook_in)") - first failure wins.
-             - app/repositories/flows.py, OrgScope-first:
-               create_flow(session, scope, *, name, definition) -> Flow
-               (validates, inserts flow + version 1, one transaction);
-               update_flow_definition(session, scope, flow_id, definition)
-               -> FlowVersion (validates, next version number = max+1);
-               set_enabled(session, scope, flow_id, enabled) -> Flow;
-               get_flow / list_flows via OrgScope; get_current_definition
-               (latest version row); version_history (ordered asc).
-             - No API endpoints (M4). No new dependencies (pydantic present).
-             - Tests (PG-backed, no skips): migration 0009 cycle; create
-               flow + version 1 persisted; update bumps version 2 monotonic
-               unique; definition validation: missing trigger -> 422 path
-               "trigger"; unknown trigger type -> 422 listing supported;
-               unknown action type -> 422 path into actions; enabled toggle;
-               tenant isolation (org B get -> None); version history order.
-               Self-checks: bypass validation in create -> the bad-type test
-               must fail; drop the unique(flow_id, version) constraint in
-               the migration -> a double-version test must fail. Stop
-               after C20.
+Note:        Flow + FlowVersion (0009, unique(flow_id, version)); pydantic
+             definition schema validated in the repository (422 with exact
+             JSON path; SUPPORTED_TYPES from C18 as the single registry);
+             OrgScope-first CRUD, version reads behind the ownership-proven
+             trust boundary; append-only versioning.
+             ACCEPTED 2026-11-08: 140 passed; reviewer probes (versioning,
+             exact 422 paths, isolation on flow + history); mutations on
+             validation bypass and unique constraint (full schema rebuild)
+             caught. Awaiting owner sign-off.
 ```
 ## Log (append only, newest last)
 
@@ -177,3 +147,4 @@ Note:        Reviewer decisions:
 | 2026-11-08 02:40 | reviewer | C19 ACCEPTED - full audit shape with SAVEPOINT isolation verified (reviewer FK-failure probe: None + caller survives + identifier-only log); both mutations caught; 131 passed, ruff/mypy clean. Sprint 2 (M1) complete after owner sign-off. C20 awaits owner command through the reviewer (workflow rule). |
 | 2026-11-08 03:00 | owner | C19 sign-off -> ACCEPTED in docs/TRACKER.md. Sprint 2 (M1) fully signed off. |
 | 2026-11-08 03:05 | reviewer | C20 models.flow CONTRACTED per workflow rule: Flow + FlowVersion (0009), pydantic definition schema validated in the repository (422 with exact path, SUPPORTED_TYPES from C18 as the single registry), OrgScope-first versioning CRUD, no new deps. Sprint 3 (M2) begins. Awaiting implementer. |
+| 2026-11-08 03:40 | reviewer | C20 ACCEPTED - versioned flows verified: exact 422 paths (trigger / trigger.type / actions.0.type with supported lists), tenant isolation on flow + version history, monotonic versioning; mutations on validation bypass and unique(flow_id, version) via full schema rebuild caught; 140 passed, ruff/mypy clean. Awaiting owner sign-off. C21 not started. |
