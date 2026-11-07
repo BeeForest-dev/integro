@@ -31,48 +31,20 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C14
 Name:        services.auth.tokens
-State:       GENERATED
+State:       CHANGES_REQUESTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    reviewer
+Awaiting:    implementer
 Contract:    see docs/CONTRACTS.md, section C14
 Delivery:    docs/reviews/C14.md
-Note:        Reviewer decisions:
-             - backend/app/services/auth/tokens.py; typed errors TokenError
-               (base), TokenExpired, TokenInvalid in the same module (C15
-               maps them to 401 at the API edge).
-             - Compact JWT, HS256. Fixed header {"alg":"HS256","typ":"JWT"}
-               (no algorithm negotiation; alg=none impossible by
-               construction). Signature: cryptography hazmat HMAC-SHA256 +
-               hmac.compare_digest (constant time). cryptography is on the
-               AGENTS.md allow-list -> add pinned to requirements.txt (no
-               owner approval needed). PyJWT alternative rejected: not on
-               the allow-list.
-             - Claims: iss="integro", aud="integro-api", sub=user_id (str),
-               org=organization_id (str), typ in {"access","refresh"},
-               iat, exp. exp is REQUIRED - a token without it is TokenInvalid.
-               No role claim (role comes from the DB membership, never from
-               the token).
-             - TTLs: access 900 s, refresh 7 days - module constants.
-             - API: issue_token_pair(user_id, organization_id, secret,
-               now=None) -> TokenPair(access_token, refresh_token);
-               verify_access_token(token, secret) -> dict claims;
-               verify_refresh_token(token, secret) -> dict claims.
-               secret: str is an EXPLICIT parameter (Settings.SECRET_KEY is
-               wired by C15, not imported here) - keeps the service pure and
-               testable. Deviation from the contract's "core.config" dep,
-               rationale: purity + the contract's own "Side fx: none".
-             - verify: exactly 3 dot-separated parts; header byte-identical
-               to the fixed header; signature compare_digest; iss/aud exact
-               match; typ matches the verifier; exp <= now -> TokenExpired;
-               everything else malformed/wrong -> TokenInvalid.
-             - Tests (no PG needed): roundtrip claims; access/refresh cross
-               rejection; tampered payload; tampered signature; wrong secret;
-               expired -> TokenExpired (build with the module's internal
-               signer with a past exp); missing exp -> TokenInvalid; wrong
-               aud/iss -> TokenInvalid; alg=none token -> TokenInvalid;
-               garbage string -> TokenInvalid. Stop after C14.
+Note:        CHANGES_REQUESTED 2026-11-07: one fix - non-ASCII token segments
+             must surface as TokenInvalid, not UnicodeEncodeError (header
+             strict-ascii encode + payload b64decode both exposed; reviewer
+             probe verified). Add a test with a unicode token and a
+             unicode-in-payload token; self-check: fix reverted -> test
+             FAILS. Everything else verified: 88 passed; alg=none,
+             exp-string/bool, typ/exp mutations caught by dedicated tests.
 ```
 ## Log (append only, newest last)
 
@@ -144,3 +116,4 @@ Note:        Reviewer decisions:
 | 2026-11-07 18:15 | owner + reviewer | workflow rule agreed and written into AGENTS.md section 8: the only valid start signal is State: CONTRACTED in LOOP.md; owner chat messages do not override it; reviewer writes the CONTRACTED block before any module starts. |
 | 2026-11-07 18:30 | owner | C13 sign-off -> ACCEPTED in docs/TRACKER.md. |
 | 2026-11-07 18:35 | reviewer | C14 services.auth.tokens CONTRACTED per the new workflow rule: HS256 compact JWT via cryptography (allow-listed, PyJWT rejected as not allow-listed), explicit secret param, typed TokenExpired/TokenInvalid. Awaiting implementer. |
+| 2026-11-07 19:30 | reviewer | C14 CHANGES_REQUESTED - core verified (fixed header, compare_digest before parsing, typed errors, 88 passed, typ/exp mutations caught) but a unicode token escapes as UnicodeEncodeError instead of TokenInvalid (live probe). One fix + test required. See docs/reviews/C14.md. |

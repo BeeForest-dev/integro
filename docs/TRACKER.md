@@ -38,7 +38,7 @@ Update this file **daily** (5 minutes) — it is the only progress source that c
 | C11 | models.user + membership | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C11.md); owner sign-off 2026-11-06. 57 passed; unique-pair + role CHECK mutation-proven; raw-value guard test. |
 | C12 | repositories.org_scope | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C12.md); owner sign-off 2026-11-07. 69 passed; OR/union/text/two-entity rejections mutation-proven. |
 | C13 | services.auth.password | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C13.md); owner sign-off 2026-11-07. 78 passed; both except-tuple elements mutation-proven; password_hash migration 0005 closes the C11 requirement. |
-| C14 | services.auth.tokens | TODO | | | | | |
+| C14 | services.auth.tokens | CHANGES_REQUESTED | ✗ | ✓ | ✓ | ✓ | Unicode garbage token escapes as UnicodeEncodeError instead of TokenInvalid (reviewer probe); one fix + test required. Core verified: 88 passed, alg=none/exp/typ mutations caught. See docs/reviews/C14.md. |
 | C15 | api.auth | TODO | | | | | |
 | C16 | api.rbac | TODO | | | | | |
 | C17 | core.crypto | TODO | | | | | |
