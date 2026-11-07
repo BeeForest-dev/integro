@@ -27,7 +27,7 @@ def _validated_definition(definition: dict[str, Any]) -> dict[str, Any]:
     ``"trigger.type: unsupported type 'carrier_pigeon' (supported: ...)"``.
     """
     try:
-        return FlowDefinition.model_validate(definition).model_dump()
+        return FlowDefinition.model_validate(definition).model_dump(exclude_none=True)
     except ValidationError as exc:
         first = exc.errors()[0]
         path = ".".join(str(part) for part in first["loc"])
