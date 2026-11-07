@@ -12,7 +12,7 @@ from app.models import MembershipRole, Organization, User
 from app.repositories.memberships import create_membership
 from app.repositories.organizations import create_organization
 from app.repositories.users import create_user
-from app.services.audit import record_audit
+from app.services.audit import try_record_audit
 from app.services.auth.password import hash_password
 from app.services.auth.tokens import TokenPair, issue_token_pair
 
@@ -68,7 +68,7 @@ async def register(
         organization_id=organization.id,
         role=MembershipRole.OWNER,
     )
-    await record_audit(
+    await try_record_audit(
         session,
         organization_id=organization.id,
         actor_user_id=user.id,

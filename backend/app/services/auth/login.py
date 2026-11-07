@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
 from app.models import Membership, Organization, User
-from app.services.audit import record_audit
+from app.services.audit import try_record_audit
 from app.services.auth.password import verify_password
 from app.services.auth.registration import AuthResult
 from app.services.auth.tokens import TokenPair, issue_token_pair
@@ -67,7 +67,7 @@ async def login(
     organization = await session.get(Organization, membership.organization_id)
     if organization is None:
         raise _invalid_credentials()
-    await record_audit(
+    await try_record_audit(
         session,
         organization_id=organization.id,
         actor_user_id=user.id,

@@ -31,11 +31,11 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C19
 Name:        services.audit
-State:       CONTRACTED
+State:       GENERATED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    implementer
+Awaiting:    reviewer
 Contract:    see docs/CONTRACTS.md, section C19
 Delivery:    docs/reviews/C19.md
 Note:        Reviewer decisions:
@@ -156,6 +156,7 @@ Note:        Reviewer decisions:
 | 2026-11-08 19:00 | implementer | C16 GENERATED: api/security.py (claims 401 generic, membership via OrgScope 403-not-404, require_roles explicit set with roles in detail); 6 PG-backed tests on scratch app, both mutations verified - suite 109 passed, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-08 21:30 | implementer | C17 GENERATED: core/crypto.py (Fernet, HKDF-derived key from SECRET_KEY, CryptoError single failure type, empty->empty both ways); 10 tests, both mutations verified - suite 119 passed, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-09 00:30 | implementer | C18 GENERATED: Connection model (JSONB config, encrypted secret at rest, SUPPORTED_TYPES) + migration 0007, OrgScope-first repositories/connections (secret_error state + self-heal, to_api_dict leak-free); 8 PG-backed tests, both mutations verified; leftover-rows FK trap found and fixed (clean before+after) - suite 127 passed on fresh DB, ruff/mypy clean. Awaiting reviewer. |
+| 2026-11-09 11:30 | implementer | C19 GENERATED: migration 0008 (entity/entity_id/before/after/ip), full record_audit + failure-isolated try_record_audit (SAVEPOINT + payload-free audit_write_failed log), C15 call sites switched; 4 PG-backed tests, both mutations verified - suite 131 passed on fresh DB, ruff/mypy clean. Sprint 2 (M1) complete. Awaiting reviewer. |
 | 2026-11-07 23:50 | reviewer | C16 ACCEPTED - security.py per contract; reviewer live probes incl. cross-org role resolution (token org B viewer -> 403 with required roles); mutations on role-check and membership-None branch fail dedicated tests; 109 passed, ruff/mypy clean; C15 untouched. Awaiting owner sign-off. C17 not started. |
 | 2026-11-08 00:05 | owner | C16 sign-off -> ACCEPTED in docs/TRACKER.md. |
 | 2026-11-08 00:10 | reviewer | C17 core.crypto CONTRACTED per workflow rule: Fernet with HKDF-derived key from SECRET_KEY (no second env var), typed CryptoError, empty->empty both directions, no new dependencies. Awaiting implementer. |
