@@ -31,11 +31,11 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C22
 Name:        connectors.triggers.webhook
-State:       CONTRACTED
+State:       GENERATED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    implementer
+Awaiting:    reviewer
 Contract:    see docs/CONTRACTS.md, section C22
 Delivery:    docs/reviews/C22.md
 Note:        Reviewer decisions:
@@ -177,6 +177,7 @@ Note:        Reviewer decisions:
 | 2026-11-09 11:30 | implementer | C19 GENERATED: migration 0008 (entity/entity_id/before/after/ip), full record_audit + failure-isolated try_record_audit (SAVEPOINT + payload-free audit_write_failed log), C15 call sites switched; 4 PG-backed tests, both mutations verified - suite 131 passed on fresh DB, ruff/mypy clean. Sprint 2 (M1) complete. Awaiting reviewer. |
 | 2026-11-09 14:30 | implementer | C20 GENERATED: Flow/FlowVersion models + migration 0009 (unique(flow_id,version), no current FK), pydantic FlowDefinition validated against SUPPORTED_TYPES, OrgScope-first repositories/flows with pre-insert 422 validation ("json-path: message"); 9 PG-backed tests, both mutations verified (schema mutation via fresh rebuild) - suite 140 passed on fresh DB, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-09 17:30 | implementer | C21 GENERATED: services/conditions (stdlib-only condition tree, explicit operator registry, never-raising evaluation with failed_paths, strict validate_conditions), FlowDefinition gains optional validated conditions (the one allowed C20 touch); 30 new tests, both mutations verified - suite 169 passed on fresh DB, ruff/mypy clean. Awaiting reviewer. |
+| 2026-11-12 15:00 | implementer | C22 GENERATED (scope: events storage of C23 delivered here): Event model + migration 0010 (unique(org, idempotency_key)), store_event dedupe, POST /hooks/{id} with raw-body HMAC (compare_digest, uniform 404, lazy celery seam, process_event placeholder); 12 PG-backed tests, both mutations verified; facts: celery 5.6 send_task ignores always_eager, compare_digest-vs-!= is timing-only - suite 181 passed on fresh DB, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-07 23:50 | reviewer | C16 ACCEPTED - security.py per contract; reviewer live probes incl. cross-org role resolution (token org B viewer -> 403 with required roles); mutations on role-check and membership-None branch fail dedicated tests; 109 passed, ruff/mypy clean; C15 untouched. Awaiting owner sign-off. C17 not started. |
 | 2026-11-08 00:05 | owner | C16 sign-off -> ACCEPTED in docs/TRACKER.md. |
 | 2026-11-08 00:10 | reviewer | C17 core.crypto CONTRACTED per workflow rule: Fernet with HKDF-derived key from SECRET_KEY (no second env var), typed CryptoError, empty->empty both directions, no new dependencies. Awaiting implementer. |
