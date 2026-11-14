@@ -29,21 +29,52 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ## Current contract
 
 ```
-ID:          C26
-Name:        connectors.triggers.imap
-State:       ACCEPTED
+ID:          C27
+Name:        connectors.actions.http
+State:       CONTRACTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    owner
-Contract:    see docs/CONTRACTS.md, section C26
-Delivery:    docs/reviews/C26.md
-Note:        IMAP poller: sync stdlib client (read-only), typed errors,
-             auth_failed marking, reconnect-once, per-mailbox cursor,
-             fake-IMAP-server tests.
-             ACCEPTED 2026-11-14: 240 passed; reviewer probes (typed errors,
-             reconnect-once = 2 conns, MIME text/plain, truncation); both
-             mutations caught. Awaiting owner sign-off.
+Awaiting:    implementer
+Contract:    see docs/CONTRACTS.md, section C27
+Delivery:    docs/reviews/C27.md
+Note:        Reviewer decisions:
+             - app/services/http_client.py (the future M3 engine calls it):
+               HttpResult(status, headers REDACTED for authorization /
+               cookie / set-cookie / proxy-authorization, body truncated at
+               65536 chars with body_truncated flag, duration_seconds
+               total wall time). Typed errors: HttpTimeoutError,
+               HttpServerError (5xx, retried), HttpClientError (4xx,
+               PERMANENT, not retried), HttpInvalidJsonError (permanent).
+             - call_api(*, method, url, headers=None, body=None,
+               expect_json=False, timeout_seconds=10.0, max_attempts=3)
+               -> HttpResult. Auth = caller-provided headers (the engine
+               builds Authorization from connection secrets); the service
+               never sees raw secrets. httpx.AsyncClient per call; Timeout
+               covers connect+read; redirects followed.
+             - Retries via tenacity on the attempt function:
+               retry only (httpx.TimeoutException, HttpServerError);
+               wait_exponential (multiplier 0.5, min 0.5, max 4) WITH
+               jitter; stop_after_attempt(max_attempts); reraise=True.
+               4xx and invalid JSON raise outside the retry set - exactly
+               the contract's permanent cases. A "logical call" may be up
+               to max_attempts physical calls (documented).
+             - expect_json=True parses the body and raises
+               HttpInvalidJsonError on failure (permanent); default False
+               returns the raw body.
+             - SSRF protection is explicitly NOT this module (the engine
+               validates URLs in M3; documented).
+             - Tests with httpx.MockTransport (no new deps, no network):
+               200 JSON -> all result fields; large body truncated at the
+               cap with the flag; header redaction; 500,500,200 -> 3
+               attempts then success; 500 x3 -> HttpServerError, 3
+               attempts; 404 -> HttpClientError with exactly 1 attempt;
+               expect_json + garbage -> HttpInvalidJsonError, 1 attempt;
+               204 empty body OK; POST body/headers passthrough; timeout
+               -> HttpTimeoutError, 3 attempts.
+               Self-checks: retry 4xx as well -> the 404 attempt-count
+               test must fail; drop the truncation -> the truncation test
+               must fail. Stop after C27.
 ```
 ## Log (append only, newest last)
 
@@ -167,3 +198,5 @@ Note:        IMAP poller: sync stdlib client (read-only), typed errors,
 | 2026-11-14 16:30 | owner | C25 sign-off -> ACCEPTED in docs/TRACKER.md. |
 | 2026-11-14 16:35 | reviewer | C26 connectors.triggers.imap CONTRACTED per workflow rule: sync stdlib imap client with typed errors and reconnect-once, 60s beat poller with cursor-per-mailbox, auth_failed status, fake-IMAP-server tests. Five documented accepted-module touches total. Awaiting implementer. |
 | 2026-11-14 17:00 | reviewer | C26 ACCEPTED - IMAP poller verified against the fake server: typed errors (auth no-reconnect, timeout, break = exactly 2 connections then give up), MIME text/plain preference, exact truncation; mutations on auth_failed marking and uid-in-key caught; 240 passed, ruff/mypy clean. Awaiting owner sign-off. C27 not started. |
+| 2026-11-14 17:30 | owner | C26 sign-off -> ACCEPTED in docs/TRACKER.md. |
+| 2026-11-14 17:35 | reviewer | C27 connectors.actions.http CONTRACTED per workflow rule: outbound client with tenacity retries (timeout/5xx retried, 4xx/invalid JSON permanent), 64KB truncation, header redaction, MockTransport tests. Awaiting implementer. |
