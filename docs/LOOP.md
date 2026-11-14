@@ -31,63 +31,24 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C22
 Name:        connectors.triggers.webhook
-State:       GENERATED
+State:       CHANGES_REQUESTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    reviewer
+Awaiting:    implementer
 Contract:    see docs/CONTRACTS.md, section C22
 Delivery:    docs/reviews/C22.md
-Note:        Reviewer decisions:
-             - SCOPE: C22 implements BOTH the events storage layer (the
-               content of contract C23) and the webhook endpoint, because
-               the endpoint cannot work without it (C22 deps list
-               services.events, which formally is C23). C23 will be closed
-               by the reviewer as "delivered inside C22" - no fake work.
-             - Model app/models/event.py + migration 0010_events: Event(id
-               uuid pk, organization_id FK not null, connection_id FK ->
-               connections.id nullable, type str not null, payload JSONB
-               not null, idempotency_key str not null, received_at tz
-               server default). UNIQUE (organization_id, idempotency_key).
-             - repositories/events.py: insert_event, get_by_org_key.
-               services/events.py: store_event(session, *,
-               organization_id, connection_id, event_type, payload,
-               idempotency_key) -> tuple[Event, bool] (row, created);
-               IntegrityError on the unique index -> re-fetch existing ->
-               (existing, False) - duplicate never creates a second row.
-             - Endpoint: POST /hooks/{connection_id} (router app/api/
-               webhooks.py, mounted in create_app WITHOUT auth - it is a
-               public ingress, trust comes from the HMAC).
-               Trust boundary: the connection is resolved by id on the raw
-               session (like the auth lookup) - the request does not know
-               the org yet; from then on OrgScope rules apply.
-               Missing connection / status != "active" / no stored secret
-               -> 404 (uniform, no existence probing). Header
-               X-Webhook-Signature = hex(hmac-sha256(raw_body, connection
-               secret)) checked with hmac.compare_digest; missing/bad ->
-               401. Signature is over the RAW body bytes - a re-serialized
-               JSON with different key order MUST still verify.
-               Body: json.loads in try/except -> AppError 400 with the
-               decoder detail (msg + line/col); parsed value not a dict ->
-               400 "body: must be a JSON object".
-               Idempotency key = X-Idempotency-Key header if present, else
-               sha256(raw_body) hex - same body replayed dedupes naturally.
-               On created: celery_app.send_task("app.workers.tasks.process_
-               event", args=[str(event.id)]); placeholder task in
-               app/workers/tasks.py logs and returns the event id (real
-               engine replaces it in M3 - the ONLY allowed touch of C07's
-               file). Response 202 {event_id, received_at, duplicate};
-               duplicate -> duplicate: true, NO second enqueue.
-             - Tests (PG-backed, no skips): happy path 202 + event row +
-               eager task result; bad signature 401; tampered body after
-               signing 401; unknown token 404; inactive connection 404;
-               malformed JSON 400 with decoder detail; JSON array body
-               400; same body twice -> duplicate: true, one row, task ran
-               once; X-Idempotency-Key honored; re-signed re-serialized
-               body (keys reordered) verifies.
-               Self-checks: compare_digest -> == (or check removed) ->
-               tampered test must fail; drop the IntegrityError/dedupe
-               path -> duplicate test must fail. Stop after C22.
+Note:        CHANGES_REQUESTED 2026-11-14: one fix - a non-ASCII
+             x-webhook-signature header crashes compare_digest with TypeError
+             (500 instead of the contract's 401; reviewer-verified via raw
+             ASGI scope). Guard with presented.isascii() (or catch TypeError)
+             + raw-ASGI test with b"\xe9..." header bytes -> 401.
+             Everything else verified: raw-body HMAC (reordered re-signed
+             body verifies), uniform 404, 400 with decoder detail, idempotency
+             (body-hash + header), 3 rows / 3 enqueues for 6 probe requests;
+             dedupe mutation caught; compare_digest verified by inspection
+             (timing side-channel is untestable functionally). C23 will close
+             as delivered here.
 ```
 ## Log (append only, newest last)
 
@@ -196,3 +157,4 @@ Note:        Reviewer decisions:
 | 2026-11-08 04:40 | reviewer | C21 ACCEPTED - conditions engine verified: 20+ reviewer probes (truth tables, None-vs-absent, injection-shaped field names inert, runtime never raises, save-time 422 through C20); mutations on operator registry and missing-field handling caught; 169 passed, ruff/mypy clean. Awaiting owner sign-off. C22 not started. |
 | 2026-11-12 10:00 | owner | C21 sign-off -> ACCEPTED in docs/TRACKER.md. Resuming after the pause discussed 2026-11-08. |
 | 2026-11-12 10:05 | reviewer | C22 connectors.triggers.webhook CONTRACTED per workflow rule: scope includes the events storage layer (C23 content - will be closed as delivered here), HMAC-signed public ingress at POST /hooks/{connection_id}, idempotency via unique(org, key), placeholder worker task. Awaiting implementer. |
+| 2026-11-14 12:00 | reviewer | C22 CHANGES_REQUESTED - ingress verified end-to-end (HMAC/tamper/404/400/idempotency all green; dedupe mutation caught) except one hole: non-ASCII signature header -> TypeError -> 500 instead of 401 (raw-ASGI probe). One guard + one raw-ASGI test required. See docs/reviews/C22.md. |
