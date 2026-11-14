@@ -61,7 +61,7 @@ Update this file **daily** (5 minutes) — it is the only progress source that c
 | C22 | triggers.webhook | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C22.md); owner sign-off 2026-11-14. Raw-body HMAC ingress, idempotent events, fail-closed on garbage; mutations caught. 182 passed. |
 | C23 | services.events | ACCEPTED | ✓ | ✓ | ✓ | ✓ | ACCEPTED-by-delivery inside C22 per reviewer scope decision (docs/reviews/C23.md); owner sign-off 2026-11-14. Idempotency via unique(org, key), mutation-proven. |
 | C24 | triggers.cron | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C24.md); owner sign-off 2026-11-14. 220 passed; catch-up/double-tick probes; both mutations caught. |
-| C25 | triggers.telegram | TODO | | | | | |
+| C25 | triggers.telegram | G4 | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C25.md); owner sign-off pending. 231 passed; two-layer dedupe probes; both mutations caught. |
 | C26 | triggers.imap | TODO | | | | | |
 | C27 | actions.http | TODO | | | | | |
 | C28 | actions.table | TODO | | | | | |

@@ -31,51 +31,19 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C25
 Name:        connectors.triggers.telegram
-State:       GENERATED
+State:       ACCEPTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    reviewer
+Awaiting:    owner
 Contract:    see docs/CONTRACTS.md, section C25
 Delivery:    docs/reviews/C25.md
-Note:        Reviewer decisions:
-             - Endpoint: POST /hooks/telegram/{connection_id} (app/api/
-               telegram_webhook.py, public ingress like C22, mounted in
-               create_app). Auth: header X-Telegram-Bot-Api-Secret-Token
-               must equal the connection secret (read via C18 read_secret)
-               checked with hmac.compare_digest AND an isascii() guard
-               FIRST (the C22 lesson - non-ASCII header -> 401, never
-               TypeError). Unknown/inactive/secret-less connection -> 404
-               (uniform). Trust boundary: connection resolved on the raw
-               session, then OrgScope rules - same documented pattern.
-             - Normalization: Telegram update JSON -> event type
-               "telegram.message", payload {"update_id", "chat_id",
-               "user_id", "text", "message_id"}. Response 200
-               {"ok": true, "ignored": bool} (Telegram only needs the 200).
-             - DEDUPE (two layers): idempotency_key =
-               f"telegram:{connection_id}:{update_id}" (the C22 unique index
-               kills exact replays), PLUS the contract's older-than-last
-               guard: connection.config["last_update_id"] is compared
-               before storing - update_id <= last -> 200 ignored:true, NO
-               event (an old id never seen by this connection must not
-               create an event). config update commits with the event.
-             - Non-text updates (no message.text: photos, stickers,
-               service messages, bare callback_query) -> 200 ignored:true
-               + structlog "telegram_update_ignored" with update_id and
-               reason - NO event, NO idempotency row.
-             - Enqueue via the same _enqueue seam as C22; commit before
-               enqueue; enqueue only when an event was created.
-             - Tests (PG-backed, no skips, spy seam, no real Telegram):
-               happy text message -> event row (type + all payload fields),
-               enqueue once, config.last_update_id set; wrong/missing/
-               non-ASCII secret -> 401; unknown/inactive -> 404; exact
-               replay -> ignored, one row; OLDER update_id (5 then 3) ->
-               ignored, no event; photo (no text) -> ignored + captured log
-               event, no row; bare callback_query -> ignored with log;
-               enqueue count stays 1 through all replays/ignores.
-               Self-checks: drop the older-than-last comparison -> the
-               old-update test must fail; drop the non-text guard -> the
-               photo test must fail. Stop after C25.
+Note:        Telegram ingress: secret-token header (isascii-first),
+             two-layer dedupe (older-than-last guard + idempotency key),
+             non-text updates ignored with structured log.
+             ACCEPTED 2026-11-14: 231 passed; reviewer probes incl.
+             raw-ASGI non-ASCII 401 and 9-request id-sequence; both
+             mutations caught. Awaiting owner sign-off.
 ```
 ## Log (append only, newest last)
 
@@ -194,3 +162,4 @@ Note:        Reviewer decisions:
 | 2026-11-14 15:00 | reviewer | C24 ACCEPTED - schedule trigger verified: parser table + slot boundaries + tick semantics (catch-up once, double-tick once, disabled skip); mutations on catch-up base and slot-in-key caught; 220 passed, ruff/mypy clean. Awaiting owner sign-off. C25 not started. |
 | 2026-11-14 15:30 | owner | C24 sign-off -> ACCEPTED in docs/TRACKER.md. |
 | 2026-11-14 15:35 | reviewer | C25 connectors.triggers.telegram CONTRACTED per workflow rule: public ingress guarded by secret-token header (isascii-first), two-layer dedupe (idempotency key + older-than-last guard), non-text updates ignored with log. Awaiting implementer. |
+| 2026-11-14 16:00 | reviewer | C25 ACCEPTED - telegram ingress verified: secret-token auth (raw-ASGI non-ASCII -> 401), two-layer dedupe, non-text ignored with log; exactly 2 events/2 enqueues over 9 probe requests; both mutations caught; 231 passed, ruff/mypy clean. Awaiting owner sign-off. C26 not started. |
