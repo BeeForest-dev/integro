@@ -24,7 +24,10 @@ class Connection(Base):
         type: One of :data:`SUPPORTED_TYPES` (enforced on create).
         config: Connector-specific settings as a JSON object.
         secret_ciphertext: Fernet token of the connection secret (C17), or NULL.
-        status: ``"active"`` or ``"secret_error"`` (set by read_secret).
+        status: ``"active"``, ``"secret_error"`` (set by read_secret) or
+            ``"auth_failed"`` (set by the IMAP poller on rejected credentials);
+            the column is a plain String — new values are contract-level, not
+            schema-level.
         created_at: Row creation timestamp (timezone-aware, server default).
     """
 

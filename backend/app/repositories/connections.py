@@ -26,6 +26,21 @@ def _validate_type(connection_type: str) -> None:
         )
 
 
+def _validate_config(connection_type: str, config: dict[str, Any]) -> None:
+    """Type-specific config requirements, enforced before any insert (C26)."""
+    if connection_type != "imap_mailbox":
+        return
+    host = config.get("host")
+    if not isinstance(host, str) or not host:
+        raise ValueError("config.host: imap_mailbox requires a non-empty string")
+    username = config.get("username")
+    if not isinstance(username, str) or not username:
+        raise ValueError("config.username: imap_mailbox requires a non-empty string")
+    port = config.get("port")
+    if port is not None and (isinstance(port, bool) or not isinstance(port, int)):
+        raise ValueError("config.port: must be an integer when present")
+
+
 async def create_connection(
     session: AsyncSession,
     scope: OrgScope,
@@ -57,6 +72,7 @@ async def create_connection(
         ValueError: If the type is not supported.
     """
     _validate_type(connection_type)
+    _validate_config(connection_type, config or {})
     connection = Connection(
         organization_id=scope.organization_id,
         name=name,

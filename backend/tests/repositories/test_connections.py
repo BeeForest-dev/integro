@@ -120,7 +120,7 @@ def test_create_persists_jsonb_and_encrypts_secret_at_rest(run):
                 scope,
                 name="Inbox",
                 connection_type="imap_mailbox",
-                config={"host": "imap.example.com", "port": 993},
+                config={"host": "imap.example.com", "port": 993, "username": "user"},
                 plaintext_secret="s3cret p4ssphrase",
                 secret=SECRET,
             )
@@ -134,12 +134,13 @@ def test_create_persists_jsonb_and_encrypts_secret_at_rest(run):
                 )
             ).one()
             raw_config, raw_ciphertext = raw
-            assert raw_config == {"host": "imap.example.com", "port": 993}
+            expected_config = {"host": "imap.example.com", "port": 993, "username": "user"}
+            assert raw_config == expected_config
             assert raw_ciphertext != "s3cret p4ssphrase"
             assert decrypt(raw_ciphertext, SECRET) == "s3cret p4ssphrase"
 
             stored = await get_connection(session, scope, connection_id)
-            assert stored.config == {"host": "imap.example.com", "port": 993}
+            assert stored.config == expected_config
             assert stored.status == "active"
 
     run(_scenario)

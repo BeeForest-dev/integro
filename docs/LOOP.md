@@ -31,11 +31,11 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C26
 Name:        connectors.triggers.imap
-State:       CONTRACTED
+State:       GENERATED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    implementer
+Awaiting:    reviewer
 Contract:    see docs/CONTRACTS.md, section C26
 Delivery:    docs/reviews/C26.md
 Note:        Reviewer decisions:
@@ -198,6 +198,7 @@ Note:        Reviewer decisions:
 | 2026-11-14 14:00 | owner | C22 and C23 sign-off -> ACCEPTED in docs/TRACKER.md. |
 | 2026-11-14 19:30 | implementer | C24 GENERATED: SUPPORTED_TYPES += schedule + save-time Trigger.config validation (exactly one of every_seconds/cron), stdlib 5-field cron parser + next_slot, Flow.next_run_at (migration 0011), beat tick every 60 s (shared_task + conf entry) with advance-first, slot-keyed exactly-once events and one-shot catch-up; 38 new tests, both mutations verified (slot-key test refined: same-slot keys collide with or without the slot, so the detector uses successive slots) - suite 220 passed on fresh DB, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-15 00:30 | implementer | C25 GENERATED: POST /hooks/telegram/{id} (secret-token header with isascii guard + compare_digest, uniform 404, two-layer dedupe via C22 index + config.last_update_id, non-text ignored with telegram_update_ignored log, lazy _enqueue seam); 11 PG-backed tests, both mutations verified - suite 231 passed on fresh DB, ruff/mypy clean. Awaiting reviewer. |
+| 2026-11-15 03:30 | implementer | C26 GENERATED: stdlib sync imap client (typed errors, reconnect-once, 20000-char truncation), beat mail poller every 60 s (auth_failed persists + skip, timeout=backoff, break->failed), imap config validation in C18 create (5th touch), fake IMAP server in threads; 9 PG-backed tests, both mutations verified; C18 fixture gained username (data consequence, recorded) - suite 240 passed on fresh DB, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-14 14:05 | reviewer | C24 connectors.triggers.cron CONTRACTED per workflow rule: type "schedule" added to the registry, stdlib 5-field cron parser, 60s beat tick task with exactly-once slot idempotency and one-catch-up semantics, migration 0011 (flows.next_run_at). Four documented accepted-module touches. Awaiting implementer. |
 | 2026-11-14 15:00 | reviewer | C24 ACCEPTED - schedule trigger verified: parser table + slot boundaries + tick semantics (catch-up once, double-tick once, disabled skip); mutations on catch-up base and slot-in-key caught; 220 passed, ruff/mypy clean. Awaiting owner sign-off. C25 not started. |
 | 2026-11-14 15:30 | owner | C24 sign-off -> ACCEPTED in docs/TRACKER.md. |
