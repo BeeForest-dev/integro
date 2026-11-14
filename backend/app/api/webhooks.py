@@ -111,8 +111,10 @@ async def receive_webhook(
         raise _not_found()
 
     presented = request.headers.get(_SIGNATURE_HEADER)
-    if presented is None or not hmac.compare_digest(
-        _signature(raw_body, secret), presented
+    if (
+        presented is None
+        or not presented.isascii()
+        or not hmac.compare_digest(_signature(raw_body, secret), presented)
     ):
         raise _unauthorized()
 

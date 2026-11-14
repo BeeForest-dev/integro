@@ -287,6 +287,58 @@ def test_reserialized_body_with_reordered_keys_verifies(send_task_spy):
     assert len(send_task_spy) == 1
 
 
+def _post_raw(connection_id, headers, raw_body=BODY):
+    """Raw ASGI call for headers httpx refuses to send (e.g. non-ASCII bytes)."""
+
+    async def _do():
+        engine_module.init_engine(_database_url())
+        try:
+            app = create_app()
+            scope = {
+                "type": "http",
+                "method": "POST",
+                "path": f"/hooks/{connection_id}",
+                "raw_path": f"/hooks/{connection_id}".encode("ascii"),
+                "query_string": b"",
+                "headers": headers,
+                "scheme": "http",
+                "server": ("testserver", 80),
+            }
+            messages: list[dict] = []
+
+            async def receive():
+                return {"type": "http.request", "body": raw_body, "more_body": False}
+
+            async def send(message):
+                messages.append(message)
+
+            await app(scope, receive, send)
+            status = next(
+                m["status"] for m in messages if m["type"] == "http.response.start"
+            )
+            body = b"".join(
+                m.get("body", b"") for m in messages if m["type"] == "http.response.body"
+            )
+            return status, body
+        finally:
+            await engine_module.dispose_engine()
+
+    return asyncio.run(_do())
+
+
+def test_non_ascii_signature_returns_401_without_raising():
+    """A non-ASCII signature header -> 401, never a 500 from compare_digest."""
+    _, connection_id = asyncio.run(_seed_connection())
+
+    status, body = _post_raw(
+        connection_id,
+        headers=[(b"x-webhook-signature", b"\xe9\xe9\xe9\xe9")],
+    )
+
+    assert status == 401
+    assert b"invalid signature" in body
+
+
 def test_eager_task_returns_event_id():
     """The placeholder process_event task runs eagerly and returns the event id."""
     from app.workers.tasks import process_event
