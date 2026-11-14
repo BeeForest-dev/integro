@@ -9,8 +9,9 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
 
-# The four connector families of M2/M4; validated at the repository choke point.
-SUPPORTED_TYPES = frozenset({"webhook_in", "telegram", "imap_mailbox", "http_api"})
+# The connector families of M2/M4 plus the schedule trigger;
+# validated at the repository choke point.
+SUPPORTED_TYPES = frozenset({"webhook_in", "telegram", "imap_mailbox", "http_api", "schedule"})
 
 
 class Connection(Base):

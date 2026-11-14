@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.models import SUPPORTED_TYPES
 from app.services.conditions import validate_conditions
+from app.services.cron import CronError, validate_cron
 
 
 def _supported_listing() -> str:
@@ -21,8 +22,10 @@ class Trigger(BaseModel):
     """What starts a flow.
 
     Attributes:
-        type: One of ``SUPPORTED_TYPES`` (validated).
-        config: Trigger-specific settings.
+        type: One of ``SUPPORTED_TYPES`` (validated); ``"schedule"`` reads
+            its timer from ``config``.
+        config: Trigger-specific settings. For ``"schedule"`` exactly one of
+            ``{"every_seconds": int > 0}`` or ``{"cron": "5-field string"}``.
     """
 
     type: str
@@ -37,6 +40,35 @@ class Trigger(BaseModel):
                 f"unsupported type '{value}' (supported: {_supported_listing()})"
             )
         return value
+
+    @field_validator("config")
+    @classmethod
+    def _schedule_config_must_be_valid(
+        cls, value: dict[str, Any], info: Any
+    ) -> dict[str, Any]:
+        """Validate schedule trigger configs at save time (C24)."""
+        trigger_type = info.data.get("type")
+        if trigger_type != "schedule":
+            return value
+        keys = set(value)
+        if keys == {"every_seconds"}:
+            interval = value["every_seconds"]
+            if isinstance(interval, bool) or not isinstance(interval, int) or interval <= 0:
+                raise ValueError("config.every_seconds: must be a positive integer")
+            return value
+        if keys == {"cron"}:
+            expression = value["cron"]
+            if not isinstance(expression, str):
+                raise ValueError("config.cron: must be a string")
+            try:
+                validate_cron(expression)
+            except CronError as exc:
+                raise ValueError(f"config.cron: {exc}") from exc
+            return value
+        raise ValueError(
+            "config: schedule triggers require exactly one of "
+            "'every_seconds' or 'cron'"
+        )
 
 
 class Action(BaseModel):

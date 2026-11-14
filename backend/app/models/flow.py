@@ -23,6 +23,8 @@ class Flow(Base):
         organization_id: The owning organization (isolation boundary).
         name: Human-readable flow name.
         enabled: Whether the flow may be triggered (default on).
+        next_run_at: When a schedule-triggered flow is due next (NULL = never
+            scheduled or not yet initialized by a tick).
         created_at: Row creation timestamp (timezone-aware, server default).
     """
 
@@ -34,6 +36,9 @@ class Flow(Base):
     )
     name: Mapped[str] = mapped_column(nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    next_run_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

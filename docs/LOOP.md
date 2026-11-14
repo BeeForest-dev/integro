@@ -31,11 +31,11 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C24
 Name:        connectors.triggers.cron
-State:       CONTRACTED
+State:       GENERATED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    implementer
+Awaiting:    reviewer
 Contract:    see docs/CONTRACTS.md, section C24
 Delivery:    docs/reviews/C24.md
 Note:        Reviewer decisions:
@@ -198,4 +198,5 @@ Note:        Reviewer decisions:
 | 2026-11-14 12:00 | reviewer | C22 CHANGES_REQUESTED - ingress verified end-to-end (HMAC/tamper/404/400/idempotency all green; dedupe mutation caught) except one hole: non-ASCII signature header -> TypeError -> 500 instead of 401 (raw-ASGI probe). One guard + one raw-ASGI test required. See docs/reviews/C22.md. |
 | 2026-11-14 13:00 | reviewer | C22 ACCEPTED after fix round - isascii guard verified by raw-ASGI probe (401), guard mutation caught; 182 passed. C23 closed as ACCEPTED-by-delivery inside C22 (docs/reviews/C23.md). Awaiting owner sign-off for both. C24 not started. |
 | 2026-11-14 14:00 | owner | C22 and C23 sign-off -> ACCEPTED in docs/TRACKER.md. |
+| 2026-11-14 19:30 | implementer | C24 GENERATED: SUPPORTED_TYPES += schedule + save-time Trigger.config validation (exactly one of every_seconds/cron), stdlib 5-field cron parser + next_slot, Flow.next_run_at (migration 0011), beat tick every 60 s (shared_task + conf entry) with advance-first, slot-keyed exactly-once events and one-shot catch-up; 38 new tests, both mutations verified (slot-key test refined: same-slot keys collide with or without the slot, so the detector uses successive slots) - suite 220 passed on fresh DB, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-14 14:05 | reviewer | C24 connectors.triggers.cron CONTRACTED per workflow rule: type "schedule" added to the registry, stdlib 5-field cron parser, 60s beat tick task with exactly-once slot idempotency and one-catch-up semantics, migration 0011 (flows.next_run_at). Four documented accepted-module touches. Awaiting implementer. |

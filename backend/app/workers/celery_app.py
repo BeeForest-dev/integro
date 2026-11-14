@@ -32,9 +32,17 @@ def _result_backend_url(redis_url: str) -> str:
 app = Celery(
     "integro",
     # Import task modules when a worker starts so the tasks register.
-    include=["app.workers.tasks"],
+    include=["app.workers.tasks", "app.workers.scheduler"],
 )
 app.conf.update(
     broker_url=_REDIS_URL,
     result_backend=_result_backend_url(_REDIS_URL),
 )
+
+# C24: one static periodic pass over due schedule flows, every 60 s.
+app.conf.beat_schedule = {
+    "tick-schedules": {
+        "task": "app.workers.scheduler.tick_schedules",
+        "schedule": 60.0,
+    },
+}
