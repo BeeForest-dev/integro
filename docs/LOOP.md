@@ -31,11 +31,11 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C25
 Name:        connectors.triggers.telegram
-State:       CONTRACTED
+State:       GENERATED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    implementer
+Awaiting:    reviewer
 Contract:    see docs/CONTRACTS.md, section C25
 Delivery:    docs/reviews/C25.md
 Note:        Reviewer decisions:
@@ -189,6 +189,7 @@ Note:        Reviewer decisions:
 | 2026-11-14 13:00 | reviewer | C22 ACCEPTED after fix round - isascii guard verified by raw-ASGI probe (401), guard mutation caught; 182 passed. C23 closed as ACCEPTED-by-delivery inside C22 (docs/reviews/C23.md). Awaiting owner sign-off for both. C24 not started. |
 | 2026-11-14 14:00 | owner | C22 and C23 sign-off -> ACCEPTED in docs/TRACKER.md. |
 | 2026-11-14 19:30 | implementer | C24 GENERATED: SUPPORTED_TYPES += schedule + save-time Trigger.config validation (exactly one of every_seconds/cron), stdlib 5-field cron parser + next_slot, Flow.next_run_at (migration 0011), beat tick every 60 s (shared_task + conf entry) with advance-first, slot-keyed exactly-once events and one-shot catch-up; 38 new tests, both mutations verified (slot-key test refined: same-slot keys collide with or without the slot, so the detector uses successive slots) - suite 220 passed on fresh DB, ruff/mypy clean. Awaiting reviewer. |
+| 2026-11-15 00:30 | implementer | C25 GENERATED: POST /hooks/telegram/{id} (secret-token header with isascii guard + compare_digest, uniform 404, two-layer dedupe via C22 index + config.last_update_id, non-text ignored with telegram_update_ignored log, lazy _enqueue seam); 11 PG-backed tests, both mutations verified - suite 231 passed on fresh DB, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-14 14:05 | reviewer | C24 connectors.triggers.cron CONTRACTED per workflow rule: type "schedule" added to the registry, stdlib 5-field cron parser, 60s beat tick task with exactly-once slot idempotency and one-catch-up semantics, migration 0011 (flows.next_run_at). Four documented accepted-module touches. Awaiting implementer. |
 | 2026-11-14 15:00 | reviewer | C24 ACCEPTED - schedule trigger verified: parser table + slot boundaries + tick semantics (catch-up once, double-tick once, disabled skip); mutations on catch-up base and slot-in-key caught; 220 passed, ruff/mypy clean. Awaiting owner sign-off. C25 not started. |
 | 2026-11-14 15:30 | owner | C24 sign-off -> ACCEPTED in docs/TRACKER.md. |

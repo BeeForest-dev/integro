@@ -11,7 +11,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.api import auth, health, webhooks
+from app.api import auth, health, telegram_webhook, webhooks
 from app.api.middleware import RequestContextMiddleware
 from app.core.config import Settings
 from app.core.errors import register_error_handlers
@@ -40,6 +40,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(auth.router)
     app.include_router(webhooks.router)
+    app.include_router(telegram_webhook.router)
     return app
 
 
