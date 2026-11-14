@@ -29,22 +29,53 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ## Current contract
 
 ```
-ID:          C24
-Name:        connectors.triggers.cron
-State:       ACCEPTED
+ID:          C25
+Name:        connectors.triggers.telegram
+State:       CONTRACTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    owner
-Contract:    see docs/CONTRACTS.md, section C24
-Delivery:    docs/reviews/C24.md
-Note:        Schedule trigger: "schedule" in SUPPORTED_TYPES, stdlib 5-field
-             cron parser, 60s beat tick, advance-before-fire, exactly-once
-             slot idempotency, one-catch-up semantics.
-             ACCEPTED 2026-11-14: 220 passed; reviewer probes (parser table,
-             slot boundaries, tick semantics incl. catch-up and double-tick);
-             mutations on catch-up base and slot-in-key caught. Awaiting
-             owner sign-off.
+Awaiting:    implementer
+Contract:    see docs/CONTRACTS.md, section C25
+Delivery:    docs/reviews/C25.md
+Note:        Reviewer decisions:
+             - Endpoint: POST /hooks/telegram/{connection_id} (app/api/
+               telegram_webhook.py, public ingress like C22, mounted in
+               create_app). Auth: header X-Telegram-Bot-Api-Secret-Token
+               must equal the connection secret (read via C18 read_secret)
+               checked with hmac.compare_digest AND an isascii() guard
+               FIRST (the C22 lesson - non-ASCII header -> 401, never
+               TypeError). Unknown/inactive/secret-less connection -> 404
+               (uniform). Trust boundary: connection resolved on the raw
+               session, then OrgScope rules - same documented pattern.
+             - Normalization: Telegram update JSON -> event type
+               "telegram.message", payload {"update_id", "chat_id",
+               "user_id", "text", "message_id"}. Response 200
+               {"ok": true, "ignored": bool} (Telegram only needs the 200).
+             - DEDUPE (two layers): idempotency_key =
+               f"telegram:{connection_id}:{update_id}" (the C22 unique index
+               kills exact replays), PLUS the contract's older-than-last
+               guard: connection.config["last_update_id"] is compared
+               before storing - update_id <= last -> 200 ignored:true, NO
+               event (an old id never seen by this connection must not
+               create an event). config update commits with the event.
+             - Non-text updates (no message.text: photos, stickers,
+               service messages, bare callback_query) -> 200 ignored:true
+               + structlog "telegram_update_ignored" with update_id and
+               reason - NO event, NO idempotency row.
+             - Enqueue via the same _enqueue seam as C22; commit before
+               enqueue; enqueue only when an event was created.
+             - Tests (PG-backed, no skips, spy seam, no real Telegram):
+               happy text message -> event row (type + all payload fields),
+               enqueue once, config.last_update_id set; wrong/missing/
+               non-ASCII secret -> 401; unknown/inactive -> 404; exact
+               replay -> ignored, one row; OLDER update_id (5 then 3) ->
+               ignored, no event; photo (no text) -> ignored + captured log
+               event, no row; bare callback_query -> ignored with log;
+               enqueue count stays 1 through all replays/ignores.
+               Self-checks: drop the older-than-last comparison -> the
+               old-update test must fail; drop the non-text guard -> the
+               photo test must fail. Stop after C25.
 ```
 ## Log (append only, newest last)
 
@@ -160,3 +191,5 @@ Note:        Schedule trigger: "schedule" in SUPPORTED_TYPES, stdlib 5-field
 | 2026-11-14 19:30 | implementer | C24 GENERATED: SUPPORTED_TYPES += schedule + save-time Trigger.config validation (exactly one of every_seconds/cron), stdlib 5-field cron parser + next_slot, Flow.next_run_at (migration 0011), beat tick every 60 s (shared_task + conf entry) with advance-first, slot-keyed exactly-once events and one-shot catch-up; 38 new tests, both mutations verified (slot-key test refined: same-slot keys collide with or without the slot, so the detector uses successive slots) - suite 220 passed on fresh DB, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-14 14:05 | reviewer | C24 connectors.triggers.cron CONTRACTED per workflow rule: type "schedule" added to the registry, stdlib 5-field cron parser, 60s beat tick task with exactly-once slot idempotency and one-catch-up semantics, migration 0011 (flows.next_run_at). Four documented accepted-module touches. Awaiting implementer. |
 | 2026-11-14 15:00 | reviewer | C24 ACCEPTED - schedule trigger verified: parser table + slot boundaries + tick semantics (catch-up once, double-tick once, disabled skip); mutations on catch-up base and slot-in-key caught; 220 passed, ruff/mypy clean. Awaiting owner sign-off. C25 not started. |
+| 2026-11-14 15:30 | owner | C24 sign-off -> ACCEPTED in docs/TRACKER.md. |
+| 2026-11-14 15:35 | reviewer | C25 connectors.triggers.telegram CONTRACTED per workflow rule: public ingress guarded by secret-token header (isascii-first), two-layer dedupe (idempotency key + older-than-last guard), non-text updates ignored with log. Awaiting implementer. |
