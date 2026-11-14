@@ -58,8 +58,8 @@ Update this file **daily** (5 minutes) — it is the only progress source that c
 |---|---|---|---|---|---|---|---|
 | C20 | models.flow | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C20.md); owner sign-off 2026-11-08. 140 passed; exact 422 paths; both mutations caught (unique constraint via full schema rebuild). |
 | C21 | services.conditions | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C21.md); owner sign-off 2026-11-12. 169 passed; 20+ probes incl. injection-shaped field names; both mutations caught. |
-| C22 | triggers.webhook | CHANGES_REQUESTED | ✗ | ✓ | ✗ | ✓ | Non-ASCII signature header -> TypeError 500 instead of 401 (raw-ASGI probe); one guard + test required. Rest verified incl. idempotency. See docs/reviews/C22.md. |
-| C23 | services.events | TODO | | | | | |
+| C22 | triggers.webhook | G4 | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED after one fix round (docs/reviews/C22.md); owner sign-off pending. Raw-body HMAC ingress, idempotent events, fail-closed on garbage; mutation on dedupe + isascii guard caught. 182 passed. |
+| C23 | services.events | G4 | ✓ | ✓ | ✓ | ✓ | ACCEPTED-by-delivery inside C22 per reviewer scope decision (docs/reviews/C23.md); owner sign-off pending with C22. Idempotency via unique(org, key), mutation-proven. |
 | C24 | triggers.cron | TODO | | | | | |
 | C25 | triggers.telegram | TODO | | | | | |
 | C26 | triggers.imap | TODO | | | | | |

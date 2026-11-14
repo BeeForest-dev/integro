@@ -29,26 +29,21 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ## Current contract
 
 ```
-ID:          C22
-Name:        connectors.triggers.webhook
-State:       GENERATED
+ID:          C22 + C23
+Name:        connectors.triggers.webhook + services.events
+State:       ACCEPTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    reviewer
-Contract:    see docs/CONTRACTS.md, section C22
-Delivery:    docs/reviews/C22.md
-Note:        CHANGES_REQUESTED 2026-11-14: one fix - a non-ASCII
-             x-webhook-signature header crashes compare_digest with TypeError
-             (500 instead of the contract's 401; reviewer-verified via raw
-             ASGI scope). Guard with presented.isascii() (or catch TypeError)
-             + raw-ASGI test with b"\xe9..." header bytes -> 401.
-             Everything else verified: raw-body HMAC (reordered re-signed
-             body verifies), uniform 404, 400 with decoder detail, idempotency
-             (body-hash + header), 3 rows / 3 enqueues for 6 probe requests;
-             dedupe mutation caught; compare_digest verified by inspection
-             (timing side-channel is untestable functionally). C23 will close
-             as delivered here.
+Awaiting:    owner
+Contract:    see docs/CONTRACTS.md, sections C22 and C23
+Delivery:    docs/reviews/C22.md, docs/reviews/C23.md
+Note:        Public webhook ingress: raw-body HMAC (isascii guard -> 401 on
+             any garbage), uniform 404, 400 with decoder detail, idempotent
+             event storage via unique(org, key), placeholder worker task.
+             C23 closed as delivered within C22 (scope decision 2026-11-12).
+             ACCEPTED 2026-11-14: raw-ASGI probe -> 401; guard mutation
+             caught; 182 passed, ruff/mypy clean. Awaiting owner sign-off.
 ```
 ## Log (append only, newest last)
 
@@ -159,3 +154,4 @@ Note:        CHANGES_REQUESTED 2026-11-14: one fix - a non-ASCII
 | 2026-11-12 10:00 | owner | C21 sign-off -> ACCEPTED in docs/TRACKER.md. Resuming after the pause discussed 2026-11-08. |
 | 2026-11-12 10:05 | reviewer | C22 connectors.triggers.webhook CONTRACTED per workflow rule: scope includes the events storage layer (C23 content - will be closed as delivered here), HMAC-signed public ingress at POST /hooks/{connection_id}, idempotency via unique(org, key), placeholder worker task. Awaiting implementer. |
 | 2026-11-14 12:00 | reviewer | C22 CHANGES_REQUESTED - ingress verified end-to-end (HMAC/tamper/404/400/idempotency all green; dedupe mutation caught) except one hole: non-ASCII signature header -> TypeError -> 500 instead of 401 (raw-ASGI probe). One guard + one raw-ASGI test required. See docs/reviews/C22.md. |
+| 2026-11-14 13:00 | reviewer | C22 ACCEPTED after fix round - isascii guard verified by raw-ASGI probe (401), guard mutation caught; 182 passed. C23 closed as ACCEPTED-by-delivery inside C22 (docs/reviews/C23.md). Awaiting owner sign-off for both. C24 not started. |
