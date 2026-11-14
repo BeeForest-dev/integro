@@ -62,7 +62,7 @@ Update this file **daily** (5 minutes) — it is the only progress source that c
 | C23 | services.events | ACCEPTED | ✓ | ✓ | ✓ | ✓ | ACCEPTED-by-delivery inside C22 per reviewer scope decision (docs/reviews/C23.md); owner sign-off 2026-11-14. Idempotency via unique(org, key), mutation-proven. |
 | C24 | triggers.cron | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C24.md); owner sign-off 2026-11-14. 220 passed; catch-up/double-tick probes; both mutations caught. |
 | C25 | triggers.telegram | ACCEPTED | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C25.md); owner sign-off 2026-11-14. 231 passed; two-layer dedupe probes; both mutations caught. |
-| C26 | triggers.imap | TODO | | | | | |
+| C26 | triggers.imap | G4 | ✓ | ✓ | ✓ | ✓ | Reviewer verdict ACCEPTED (docs/reviews/C26.md); owner sign-off pending. 240 passed; fake-IMAP probes incl. reconnect-once; both mutations caught. |
 | C27 | actions.http | TODO | | | | | |
 | C28 | actions.table | TODO | | | | | |
 | C29 | actions.crm | TODO | | | | | |
