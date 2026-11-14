@@ -31,61 +31,20 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ```
 ID:          C24
 Name:        connectors.triggers.cron
-State:       GENERATED
+State:       ACCEPTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    reviewer
+Awaiting:    owner
 Contract:    see docs/CONTRACTS.md, section C24
 Delivery:    docs/reviews/C24.md
-Note:        Reviewer decisions:
-             - Registry: SUPPORTED_TYPES gains "schedule" (app/models/
-               connection.py, C18) - accepted-module touch #3, justified:
-               without it a scheduled flow cannot be saved at all.
-               Trigger config for type "schedule": exactly one of
-               {"every_seconds": int > 0} or {"cron": "5-field string"}.
-             - Schema validation at SAVE time (contract error case):
-               app/schemas/flow_definition.py gains a Trigger.config
-               validator - type "schedule" requires exactly one config key,
-               positive int interval, parseable cron (invalid cron -> 422
-               through the existing machinery, message naming the field).
-             - app/services/cron.py: stdlib-only 5-field cron parser
-               (minute hour dom mon dow; supports *, */n, a, a-b, a-b/n,
-               comma lists) + next_slot(cron, after: datetime) -> datetime.
-               Unsupported syntax -> CronError(ValueError) naming the field.
-             - Scheduling: celery beat runs ONE static periodic task
-               "app.workers.scheduler.tick_schedules" every 60 s (beat entry
-               in celery_app conf - the second allowed touch of C07).
-               tick: for each enabled flow with trigger.type == "schedule"
-               whose next_run_at <= now (UTC): create an event via
-               services.events with
-               idempotency_key = "schedule:{flow_id}:{slot_iso}" (exactly-
-               once under concurrent ticks - the C22 unique index covers
-               it), payload {"schedule": config, "previous_run_at": iso|
-               null, "scheduled_at": slot_iso}, enqueue process_event,
-               set next_run_at:
-                 interval: now + every_seconds
-                 cron: next slot strictly after now
-             - CATCH-UP (contract error case): when next_run_at is far in
-               the past (worker down), fire ONCE for the latest missed slot
-               and move on - never a loop over missed slots.
-             - Flow gains next_run_at (DateTime tz, nullable); migration
-               0011_flow_schedule (accepted-module touch #4, C20).
-               tick sets next_run_at on creation of a schedule flow too.
-             - Tests (PG-backed, no skips, no real beat - call tick directly):
-               cron parser table (all syntax forms + invalid cases with the
-               failing field named); schema 422s (bad cron, both keys, zero
-               interval); tick fires due interval flow (event created, spy
-               seam enqueued once, next_run_at advanced); not-due flow
-               untouched; disabled flow skipped; catch-up: next_run_at 3h
-               in the past -> exactly ONE event (slot idempotency), next_run
-               in the future; concurrent double-tick -> one event; cron next-
-               slot cases across minute/hour/day boundaries; beat entry
-               registered in conf.
-               Self-checks: replace the single catch-up with a missed-slots
-               loop -> the one-catch-up test must fail; drop the slot from
-               the idempotency key -> the concurrent-double-tick test must
-               fail. Stop after C24.
+Note:        Schedule trigger: "schedule" in SUPPORTED_TYPES, stdlib 5-field
+             cron parser, 60s beat tick, advance-before-fire, exactly-once
+             slot idempotency, one-catch-up semantics.
+             ACCEPTED 2026-11-14: 220 passed; reviewer probes (parser table,
+             slot boundaries, tick semantics incl. catch-up and double-tick);
+             mutations on catch-up base and slot-in-key caught. Awaiting
+             owner sign-off.
 ```
 ## Log (append only, newest last)
 
@@ -200,3 +159,4 @@ Note:        Reviewer decisions:
 | 2026-11-14 14:00 | owner | C22 and C23 sign-off -> ACCEPTED in docs/TRACKER.md. |
 | 2026-11-14 19:30 | implementer | C24 GENERATED: SUPPORTED_TYPES += schedule + save-time Trigger.config validation (exactly one of every_seconds/cron), stdlib 5-field cron parser + next_slot, Flow.next_run_at (migration 0011), beat tick every 60 s (shared_task + conf entry) with advance-first, slot-keyed exactly-once events and one-shot catch-up; 38 new tests, both mutations verified (slot-key test refined: same-slot keys collide with or without the slot, so the detector uses successive slots) - suite 220 passed on fresh DB, ruff/mypy clean. Awaiting reviewer. |
 | 2026-11-14 14:05 | reviewer | C24 connectors.triggers.cron CONTRACTED per workflow rule: type "schedule" added to the registry, stdlib 5-field cron parser, 60s beat tick task with exactly-once slot idempotency and one-catch-up semantics, migration 0011 (flows.next_run_at). Four documented accepted-module touches. Awaiting implementer. |
+| 2026-11-14 15:00 | reviewer | C24 ACCEPTED - schedule trigger verified: parser table + slot boundaries + tick semantics (catch-up once, double-tick once, disabled skip); mutations on catch-up base and slot-in-key caught; 220 passed, ruff/mypy clean. Awaiting owner sign-off. C25 not started. |
