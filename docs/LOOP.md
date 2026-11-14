@@ -29,21 +29,61 @@ Moves CHANGES_REQUESTED -> CONTRACTED after checking changes, and decides when t
 ## Current contract
 
 ```
-ID:          C25
-Name:        connectors.triggers.telegram
-State:       ACCEPTED
+ID:          C26
+Name:        connectors.triggers.imap
+State:       CONTRACTED
 Owner:       human
 Implementer: kimi
 Reviewer:    assistant
-Awaiting:    owner
-Contract:    see docs/CONTRACTS.md, section C25
-Delivery:    docs/reviews/C25.md
-Note:        Telegram ingress: secret-token header (isascii-first),
-             two-layer dedupe (older-than-last guard + idempotency key),
-             non-text updates ignored with structured log.
-             ACCEPTED 2026-11-14: 231 passed; reviewer probes incl.
-             raw-ASGI non-ASCII 401 and 9-request id-sequence; both
-             mutations caught. Awaiting owner sign-off.
+Awaiting:    implementer
+Contract:    see docs/CONTRACTS.md, section C26
+Delivery:    docs/reviews/C26.md
+Note:        Reviewer decisions:
+             - POLLING, not IDLE (contract allows either): a long-lived IDLE
+               connection does not fit celery tasks; the beat tick is the
+               retry/backoff mechanism. Documented.
+             - app/services/imap.py: stdlib-only SYNC client (imaplib+ssl+
+               email.policy) - fetch_new_messages(host, port, username,
+               password, folder, last_uid) -> (new_last_uid, list[normalized]).
+               Normalized message: {"uid", "message_id", "from", "subject",
+               "date", "body_text"} - text/plain part preferred, truncated at
+               20000 chars. Reconnect-once-then-give-up INSIDE the service
+               (one retry on connection errors); auth failure and timeout
+               propagate as typed errors (ImapAuthError, ImapTimeoutError).
+             - app/workers/mail_poller.py: beat task poll_mailboxes (entry
+               "poll-mailboxes" every 60s - 3rd documented touch of C07).
+               For each ACTIVE connection of type imap_mailbox due per
+               config.poll_every_seconds (default 300; cursor.last_poll_at):
+               read_secret (C18; CryptoError already marks secret_error);
+               ImapAuthError -> status "auth_failed" PERSISTED (new status
+               value; the column is a plain String, no DB change; model
+               docstring updated) -> no retry storm (next ticks skip non-
+               active); ImapTimeoutError -> log "imap_poll_timeout", status
+               unchanged, next tick retries (that IS the backoff); generic
+               connection error after the service's single reconnect -> log
+               "imap_poll_failed", skip. New messages -> store_event with
+               idempotency_key f"imap:{connection_id}:{uid}" (event type
+               "imap.message"), cursor {"last_uid", "last_poll_at"} persisted
+               in connection.config with the events (JSONB reassignment).
+               Enqueue per created event via the spy seam; reads ONLY.
+             - Config validation (5th documented accepted touch, C18
+               create_connection): type imap_mailbox requires config.host
+               and config.username (str), config.port int when present ->
+               ValueError naming the field.
+             - Tests (PG-backed + a THREADED FAKE IMAP SERVER fixture
+               speaking just enough protocol: LOGIN/SELECT/UID SEARCH/UID
+               FETCH/LOGOUT - no external mailbox, no new deps): happy path
+               (2 messages -> 2 events with all payload fields, cursor set);
+               second poll -> no new events; new message uid 103 later -> 1
+               event; LOGIN rejected -> status auth_failed persisted, no
+               events, second tick skips (no storm); server accepts then
+               sleeps -> timeout -> status stays active, no events; server
+               closes mid-session -> reconnect once -> give up with
+               imap_poll_failed, status active; due-gating (poll_every_seconds
+               not elapsed -> skipped).
+               Self-checks: drop the auth_failed marking -> the auth test
+               must fail; drop the uid from the idempotency key -> the
+               third-poll test must fail. Stop after C26.
 ```
 ## Log (append only, newest last)
 
@@ -163,3 +203,5 @@ Note:        Telegram ingress: secret-token header (isascii-first),
 | 2026-11-14 15:30 | owner | C24 sign-off -> ACCEPTED in docs/TRACKER.md. |
 | 2026-11-14 15:35 | reviewer | C25 connectors.triggers.telegram CONTRACTED per workflow rule: public ingress guarded by secret-token header (isascii-first), two-layer dedupe (idempotency key + older-than-last guard), non-text updates ignored with log. Awaiting implementer. |
 | 2026-11-14 16:00 | reviewer | C25 ACCEPTED - telegram ingress verified: secret-token auth (raw-ASGI non-ASCII -> 401), two-layer dedupe, non-text ignored with log; exactly 2 events/2 enqueues over 9 probe requests; both mutations caught; 231 passed, ruff/mypy clean. Awaiting owner sign-off. C26 not started. |
+| 2026-11-14 16:30 | owner | C25 sign-off -> ACCEPTED in docs/TRACKER.md. |
+| 2026-11-14 16:35 | reviewer | C26 connectors.triggers.imap CONTRACTED per workflow rule: sync stdlib imap client with typed errors and reconnect-once, 60s beat poller with cursor-per-mailbox, auth_failed status, fake-IMAP-server tests. Five documented accepted-module touches total. Awaiting implementer. |
